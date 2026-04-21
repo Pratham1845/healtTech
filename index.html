@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Pose Detection Demo</title>
+
+    <!-- MediaPipe CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            background: #111;
+            color: white;
+            text-align: center;
+            font-family: Arial;
+        }
+
+        h1 {
+            margin: 10px;
+        }
+
+        .container {
+            position: relative;
+            display: inline-block;
+        }
+
+        video {
+            display: none;
+        }
+
+        canvas {
+            border: 2px solid #00ffcc;
+            border-radius: 10px;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🧍 Pose Detection (MediaPipe)</h1>
+
+    <div class="container">
+        <video class="input_video"></video>
+        <canvas class="output_canvas" width="640" height="480"></canvas>
+    </div>
+
+    <div id="status">Detecting posture...</div>
+
+    <script>
+        const videoElement = document.querySelector('.input_video');
+        const canvasElement = document.querySelector('.output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const statusText = document.getElementById("status");
+
+        // Function to calculate angle
+        function calculateAngle(a, b, c) {
+            const radians =
+                Math.atan2(c.y - b.y, c.x - b.x) -
+                Math.atan2(a.y - b.y, a.x - b.x);
+            let angle = Math.abs((radians * 180.0) / Math.PI);
+            if (angle > 180) angle = 360 - angle;
+            return angle;
+        }
+
+        const pose = new Pose({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+            }
+        });
+
+        pose.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        pose.onResults((results) => {
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.poseLandmarks) {
+                drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
+                drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
+
+                // Example: Check back posture
+                const shoulder = results.poseLandmarks[11]; // left shoulder
+                const hip = results.poseLandmarks[23];      // left hip
+                const knee = results.poseLandmarks[25];     // left knee
+
+                const angle = calculateAngle(shoulder, hip, knee);
+
+                if (angle > 160) {
+                    statusText.innerText = "✅ Good Posture";
+                    statusText.style.color = "lightgreen";
+                } else {
+                    statusText.innerText = "⚠️ Bad Posture (Straighten your back)";
+                    statusText.style.color = "red";
+                }
+            }
+        });
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await pose.send({ image: videoElement });
+            },
+            width: 640,
+            height: 480
+        });
+
+        camera.start();
+    </script>
+
+</body>
+
+</html>
