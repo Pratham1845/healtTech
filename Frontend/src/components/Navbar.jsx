@@ -1,45 +1,66 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Activity, Menu, X } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Activity, Menu, X, Settings, User, Scan } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Dashboard', href: '/dashboard' }
+    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Workout', href: '/workout' },
+    { name: 'Chatbot', href: '/chatbot' },
+    { name: 'Analytics', href: '/stats' },
+    { name: 'History', href: '/history' }
   ];
 
   return (
     <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container navbar-container">
-        <Link to="/" className="logo" target="_blank" rel="noopener noreferrer">
+        {/* Left: Logo */}
+        <Link to="/" className="logo">
           <Activity className="logo-icon" size={28} />
           <span className="logo-text">Zenith Health</span>
         </Link>
 
+        {/* Center: Navigation Links */}
         <div className="nav-links desktop-only">
           {navLinks.map((link) => (
-            <Link key={link.name} to={link.href} target="_blank" rel="noopener noreferrer" className="nav-link">
+            <Link 
+              key={link.name} 
+              to={link.href} 
+              className={`nav-link ${location.pathname === link.href ? 'active' : ''}`}
+            >
               {link.name}
             </Link>
           ))}
         </div>
 
+        {/* Right: Actions */}
         <div className="nav-actions desktop-only">
-          <Link to="/login" target="_blank" rel="noopener noreferrer" className="btn btn-primary">Login</Link>
+          <Link to="/profile" className="nav-icon-btn" title="Profile">
+            <User size={20} />
+          </Link>
+          <Link to="/settings" className="nav-icon-btn" title="Settings">
+            <Settings size={20} />
+          </Link>
+          <Link to="/workout" className="btn btn-primary btn-sm">
+            <Scan size={16} />
+            Start Scan
+          </Link>
         </div>
 
+        {/* Mobile Menu Button */}
         <button 
           className="mobile-menu-btn mobile-only"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -54,15 +75,24 @@ const Navbar = () => {
           <Link 
             key={link.name} 
             to={link.href} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="mobile-nav-link"
+            className={`mobile-nav-link ${location.pathname === link.href ? 'active' : ''}`}
             onClick={() => setIsMobileMenuOpen(false)}
           >
             {link.name}
           </Link>
         ))}
-        <Link to="/login" target="_blank" rel="noopener noreferrer" className="btn btn-primary mobile-cta">Login</Link>
+        <div className="mobile-menu-actions">
+          <Link to="/profile" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            <User size={18} /> Profile
+          </Link>
+          <Link to="/settings" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+            <Settings size={18} /> Settings
+          </Link>
+        </div>
+        <Link to="/workout" className="btn btn-primary mobile-cta" onClick={() => setIsMobileMenuOpen(false)}>
+          <Scan size={18} />
+          Start Scan
+        </Link>
       </div>
     </nav>
   );

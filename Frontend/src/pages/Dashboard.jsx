@@ -1,128 +1,177 @@
-import { TrendingUp, Activity, PieChart, AlertCircle, MessageCircle, History } from 'lucide-react';
+import { TrendingUp, Activity, PieChart, AlertCircle, MessageCircle, History, Zap, Heart, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import StatCard from '../components/StatCard';
 import './Dashboard.css';
 
 const Dashboard = () => {
   return (
-    <div className="page-container">
+    <div className="page-container dashboard-page">
       <div className="container">
         <div className="page-header">
-          <h1>Your <span className="text-gradient">Dashboard</span></h1>
-          <p>Welcome back, Alex. Here is your overview for today.</p>
+          <div>
+            <h1>Your <span className="text-gradient">Dashboard</span></h1>
+            <p>Welcome back, Alex. Here's your health overview for today.</p>
+          </div>
+          <div className="date-filter-btn">
+            <span>This Week</span>
+          </div>
         </div>
 
-        <div className="dashboard-grid glass-card">
-          {/* Dashboard Header */}
-          <div className="dash-header">
-            <div className="user-greeting">
-              <h3>Health Status</h3>
-              <p>Your health score improved by 4% this week.</p>
+        {/* Top Row - Quick Stats */}
+        <div className="stats-grid">
+          <StatCard 
+            icon={Heart}
+            label="Health Score"
+            value="84"
+            trend="+4% this week"
+            trendType="positive"
+          />
+          <StatCard 
+            icon={Activity}
+            label="Mood Status"
+            value="Focused"
+            trend="Calm & Productive"
+            trendType="positive"
+          />
+          <StatCard 
+            icon={AlertCircle}
+            label="Risk Level"
+            value="Low"
+            trend="No concerns"
+            trendType="positive"
+          />
+          <StatCard 
+            icon={Zap}
+            label="Today's Activity"
+            value="45 min"
+            trend="3 workouts this week"
+            trendType="positive"
+          />
+        </div>
+
+        {/* Second Row - Charts & Insights */}
+        <div className="dashboard-main-grid">
+          {/* Weekly Activity Chart */}
+          <div className="chart-card glass-card">
+            <div className="card-header">
+              <h3>Weekly Activity</h3>
+              <TrendingUp size={20} className="text-accent" />
             </div>
-            <div className="date-filter">
-              <span>This Week</span>
+            <div className="bar-chart">
+              {[
+                { day: 'Mon', height: 60 },
+                { day: 'Tue', height: 80 },
+                { day: 'Wed', height: 45 },
+                { day: 'Thu', height: 90 },
+                { day: 'Fri', height: 70 },
+                { day: 'Sat', height: 85 },
+                { day: 'Sun', height: 40 }
+              ].map((item, idx) => (
+                <div key={idx} className="bar-item">
+                  <div 
+                    className="bar-fill" 
+                    style={{ height: `${item.height}%` }}
+                  ></div>
+                  <span className="bar-label">{item.day}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Quick Actions Panel */}
-          <div className="quick-actions-panel">
-            <Link to="/workout" className="quick-action-card">
-              <Activity size={24} className="text-accent" />
-              <span>Start Workout</span>
-            </Link>
-            <Link to="/chatbot" className="quick-action-card">
-              <MessageCircle size={24} className="text-accent" />
-              <span>AI Coach</span>
-            </Link>
-            <Link to="/stats" className="quick-action-card">
-              <PieChart size={24} className="text-accent" />
-              <span>View Stats</span>
-            </Link>
-            <Link to="/history" className="quick-action-card">
-              <History size={24} className="text-accent" />
-              <span>History</span>
-            </Link>
+          {/* Mood Trend */}
+          <div className="mood-card glass-card">
+            <div className="card-header">
+              <h3>Mood Trend</h3>
+              <Activity size={20} className="text-accent" />
+            </div>
+            <div className="wave-chart">
+              <svg viewBox="0 0 200 60" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="moodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="var(--accent-purple)" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="var(--accent-purple)" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path 
+                  d="M0,30 Q25,10 50,25 T100,20 T150,35 T200,25 L200,60 L0,60 Z" 
+                  fill="url(#moodGradient)" 
+                />
+                <path 
+                  d="M0,30 Q25,10 50,25 T100,20 T150,35 T200,25" 
+                  fill="none" 
+                  stroke="var(--accent-purple)" 
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
+            <div className="mood-breakdown">
+              <div className="mood-item">
+                <span className="mood-label">Calm</span>
+                <span className="mood-value">65%</span>
+              </div>
+              <div className="mood-item">
+                <span className="mood-label">Focused</span>
+                <span className="mood-value">25%</span>
+              </div>
+              <div className="mood-item">
+                <span className="mood-label">Stressed</span>
+                <span className="mood-value">10%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Third Row - Quick Actions & Recommendations */}
+        <div className="dashboard-bottom-grid">
+          {/* Quick Actions */}
+          <div className="actions-card glass-card">
+            <h3>Quick Actions</h3>
+            <div className="actions-grid">
+              <Link to="/workout" className="action-btn">
+                <Activity size={24} />
+                <span>Start Workout</span>
+              </Link>
+              <Link to="/chatbot" className="action-btn">
+                <MessageCircle size={24} />
+                <span>AI Coach</span>
+              </Link>
+              <Link to="/stats" className="action-btn">
+                <PieChart size={24} />
+                <span>View Analytics</span>
+              </Link>
+              <Link to="/history" className="action-btn">
+                <History size={24} />
+                <span>Session History</span>
+              </Link>
+            </div>
           </div>
 
-          {/* Dashboard Grid */}
-          <div className="dash-widgets">
-            
-            {/* Health Score Ring */}
-            <div className="dash-widget widget-score">
-              <h4>Overall Health Score</h4>
-              <div className="score-ring-container">
-                <svg className="score-ring" viewBox="0 0 100 100">
-                  <circle className="ring-bg" cx="50" cy="50" r="40"></circle>
-                  <circle className="ring-progress" cx="50" cy="50" r="40" strokeDasharray="251" strokeDashoffset="40"></circle>
-                </svg>
-                <div className="score-value">
-                  <span className="num">84</span>
-                  <span className="label">Good</span>
+          {/* Smart Recommendations */}
+          <div className="recommendations-card glass-card">
+            <div className="card-header">
+              <h3>Smart Recommendations</h3>
+              <Target size={20} className="text-accent" />
+            </div>
+            <div className="recommendations-list">
+              <div className="recommendation-item warning">
+                <div className="rec-icon">
+                  <AlertCircle size={18} />
+                </div>
+                <div className="rec-content">
+                  <strong>Posture Alert</strong>
+                  <span>Prolonged slouching detected. Try the 5-min neck stretch routine.</span>
+                </div>
+              </div>
+              <div className="recommendation-item success">
+                <div className="rec-icon">
+                  <TrendingUp size={18} />
+                </div>
+                <div className="rec-content">
+                  <strong>Routine Optimized</strong>
+                  <span>Increased lower body volume by 10% based on recovery data.</span>
                 </div>
               </div>
             </div>
-
-            {/* Weekly Activity Graph */}
-            <div className="dash-widget widget-activity">
-              <div className="widget-header">
-                <h4>Weekly Activity</h4>
-                <TrendingUp size={16} className="text-accent" />
-              </div>
-              <div className="chart-mockup">
-                <div className="bar-group"><div className="bar h-40"></div><span>M</span></div>
-                <div className="bar-group"><div className="bar h-60"></div><span>T</span></div>
-                <div className="bar-group"><div className="bar h-80"></div><span>W</span></div>
-                <div className="bar-group"><div className="bar h-30"></div><span>T</span></div>
-                <div className="bar-group"><div className="bar h-90"></div><span>F</span></div>
-                <div className="bar-group"><div className="bar h-50"></div><span>S</span></div>
-                <div className="bar-group"><div className="bar h-70"></div><span>S</span></div>
-              </div>
-            </div>
-
-            {/* Mood Trend */}
-            <div className="dash-widget widget-mood">
-              <div className="widget-header">
-                <h4>Mood Trend</h4>
-                <Activity size={16} className="text-accent" />
-              </div>
-              <div className="wave-chart">
-                <svg viewBox="0 0 200 50" preserveAspectRatio="none">
-                  <path d="M0,25 C30,10 70,40 100,25 C130,10 170,30 200,20 L200,50 L0,50 Z" fill="url(#dash-gradient-purple)"></path>
-                  <path d="M0,25 C30,10 70,40 100,25 C130,10 170,30 200,20" fill="none" stroke="var(--accent-purple)" strokeWidth="2"></path>
-                  <defs>
-                    <linearGradient id="dash-gradient-purple" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="var(--accent-purple)" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="var(--accent-purple)" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-              <div className="mood-stats">
-                <div className="stat"><span>Calm</span> 65%</div>
-                <div className="stat"><span>Stressed</span> 10%</div>
-              </div>
-            </div>
-
-            {/* Recommendations Feed */}
-            <div className="dash-widget widget-feed">
-              <h4>Smart Recommendations</h4>
-              <ul className="feed-list">
-                <li>
-                  <div className="feed-icon warning"><AlertCircle size={14} /></div>
-                  <div className="feed-text">
-                    <strong>Posture Alert</strong>
-                    <span>Prolonged slouching detected yesterday. Try the 5-min neck stretch.</span>
-                  </div>
-                </li>
-                <li>
-                  <div className="feed-icon info"><PieChart size={14} /></div>
-                  <div className="feed-text">
-                    <strong>Routine Optimized</strong>
-                    <span>Increased lower body volume by 10% based on recent recovery data.</span>
-                  </div>
-                </li>
-              </ul>
-            </div>
-
           </div>
         </div>
       </div>
