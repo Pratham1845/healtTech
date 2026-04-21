@@ -1,0 +1,168 @@
+.stats-page {
+  padding: 8rem 0 4rem;
+}
+
+.stats-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.stats-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.bg-blue { background: var(--accent-blue); }
+.bg-cyan { background: var(--accent-cyan); }
+.bg-purple { background: var(--accent-purple); }
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-content .label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-content .value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat-content .trend {
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+}
+
+.trend.positive { color: #34d399; }
+.trend.negative { color: #ef4444; }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+}
+
+.chart-container {
+  padding: 2rem;
+}
+
+.span-2 {
+  grid-column: span 1; /* Actually just takes up more space in the 2fr 1fr grid */
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.chart-header h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0;
+}
+
+.chart-filters {
+  display: flex;
+  background: #f8fafc;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+}
+
+.chart-filters button {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.chart-filters button.active {
+  background: var(--panel-border);
+  color: var(--text-main);
+}
+
+.large-chart {
+  height: 250px;
+  padding-top: 2rem;
+}
+
+/* Pie Chart Mockup */
+.pie-chart-mockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.pie-circle {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--accent-cyan) 0% 65%,
+    var(--accent-blue) 65% 90%,
+    var(--accent-purple) 90% 100%
+  );
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: 100%;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.9rem;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.dot-1 { background: var(--accent-cyan); }
+.dot-2 { background: var(--accent-blue); }
+.dot-3 { background: var(--accent-purple); }
+
+.h-100 { height: 100%; }
+
+@media (max-width: 992px) {
+  .stats-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
