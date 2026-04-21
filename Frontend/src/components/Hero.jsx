@@ -11,7 +11,7 @@ const Hero = () => {
         <div className="hero-content animate-fade-up">
           <div className="hero-badge">
             <Activity size={16} />
-            <span>AI-Powered Health Intelligence</span>
+            <span>No Wearables • AI-Powered • Camera-Based</span>
           </div>
           
           <h1 className="hero-title">
@@ -19,11 +19,11 @@ const Hero = () => {
           </h1>
           
           <p className="hero-subtitle">
-            AI-powered posture, mood, and fitness monitoring using only your camera.
+            Affordable AI-powered posture, mood, and fitness insights using only your camera.
           </p>
           
           <p className="hero-support-text">
-            No wearables. No expensive devices. Real-time intelligent health insights powered by cutting-edge computer vision.
+            Preventive health monitoring without expensive devices. Real-time form correction, wellness tracking, and AI coaching — all from your webcam.
           </p>
           
           <div className="hero-cta-group">
@@ -31,8 +31,8 @@ const Hero = () => {
               Start Free Scan
               <ArrowRight size={18} />
             </Link>
-            <Link to="/login" className="btn btn-secondary btn-lg">
-              Login
+            <Link to="/dashboard" className="btn btn-secondary btn-lg">
+              View Dashboard
             </Link>
           </div>
           

@@ -1,44 +1,51 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  /* Premium Dark Theme - Futuristic Health Tech */
-  --bg-primary: #0a0e1a;
-  --bg-secondary: #111827;
-  --bg-tertiary: #1a2035;
+  /* ============================================
+     ZENITH HEALTH - WHITE/GREEN THEME
+     Clean, Fresh, Health-Focused Design
+     ============================================ */
   
-  /* Glass Panels */
-  --panel-bg: rgba(17, 24, 39, 0.6);
-  --panel-border: rgba(99, 102, 241, 0.15);
-  --panel-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  /* Main Backgrounds */
+  --bg-primary: #FFFFFF;           /* Pure white background */
+  --bg-secondary: #F8FAFC;         /* Light gray sections */
+  --bg-tertiary: #F1F5F9;          /* Tertiary background */
   
-  /* Accent Colors */
-  --accent-cyan: #06b6d4;
-  --accent-blue: #3b82f6;
-  --accent-purple: #8b5cf6;
-  --accent-success: #10b981;
-  --accent-warning: #f59e0b;
-  --accent-danger: #ef4444;
+  /* Cards & Panels */
+  --panel-bg: #FFFFFF;
+  --panel-border: #E2E8F0;
+  --panel-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  
+  /* Green Accent Colors */
+  --accent-cyan: #10B981;          /* Emerald green - Primary */
+  --accent-blue: #34D399;          /* Mint green - Secondary */
+  --accent-purple: #059669;        /* Dark green - Tertiary */
+  --accent-success: #22C55E;       /* Success green */
+  --accent-warning: #F59E0B;       /* Warning amber */
+  --accent-danger: #EF4444;        /* Danger red */
   
   /* Text Colors */
-  --text-primary: #f9fafb;
-  --text-secondary: #d1d5db;
-  --text-muted: #9ca3af;
-  --text-dark: #6b7280;
+  --text-primary: #0F172A;         /* Dark text */
+  --text-secondary: #475569;       /* Secondary text */
+  --text-muted: #94A3B8;           /* Muted text */
+  --text-dark: #1E293B;            /* Darkest text */
   
   /* Gradients */
-  --primary-gradient: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-  --secondary-gradient: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  --success-gradient: linear-gradient(135deg, var(--accent-success), var(--accent-cyan));
+  --hero-gradient: linear-gradient(90deg, #10B981, #34D399, #059669);
+  --primary-gradient: linear-gradient(135deg, #10B981, #34D399);
+  --secondary-gradient: linear-gradient(135deg, #34D399, #059669);
+  --success-gradient: linear-gradient(135deg, #22C55E, #10B981);
   
-  /* Glow Effects */
-  --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.3);
-  --glow-blue: 0 0 20px rgba(59, 130, 246, 0.3);
-  --glow-purple: 0 0 20px rgba(139, 92, 246, 0.3);
+  /* Glow Effects (subtle for white theme) */
+  --glow-cyan: 0 4px 12px rgba(16, 185, 129, 0.15);
+  --glow-blue: 0 4px 12px rgba(52, 211, 153, 0.15);
+  --glow-purple: 0 4px 12px rgba(5, 150, 105, 0.15);
+  --card-glow: 0 10px 25px rgba(16, 185, 129, 0.1);
   
   /* Transitions */
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.3s ease;
-  --transition-slow: 0.5s ease;
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -51,8 +58,8 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg-primary);
   background-image: 
-    radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+    radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(52, 211, 153, 0.05) 0%, transparent 50%);
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
@@ -153,12 +160,12 @@ section {
 .btn-primary {
   background: var(--primary-gradient);
   color: #fff;
-  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
 }
 
 .btn-secondary {
@@ -186,7 +193,7 @@ section {
 }
 
 .text-gradient {
-  background: var(--primary-gradient);
+  background: var(--hero-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -222,8 +229,8 @@ section {
 
 .glass-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  border-color: rgba(6, 182, 212, 0.3);
+  box-shadow: var(--card-glow), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-color: var(--accent-cyan);
 }
 
 /* Animations */

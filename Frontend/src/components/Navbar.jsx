@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Activity, Menu, X, Settings, User, Scan } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Activity, Menu, X, Settings, User, Scan, LogIn, LogOut } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,6 +17,18 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Check if user is logged in (from localStorage or session)
+  useEffect(() => {
+    const userLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    setIsLoggedIn(userLoggedIn);
+  }, [location]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    setIsLoggedIn(false);
+    navigate('/');
+  };
 
   const navLinks = [
     { name: 'Dashboard', href: '/dashboard' },
@@ -48,16 +62,28 @@ const Navbar = () => {
 
         {/* Right: Actions */}
         <div className="nav-actions desktop-only">
-          <Link to="/profile" className="nav-icon-btn" title="Profile">
-            <User size={20} />
-          </Link>
-          <Link to="/settings" className="nav-icon-btn" title="Settings">
-            <Settings size={20} />
-          </Link>
-          <Link to="/workout" className="btn btn-primary btn-sm">
-            <Scan size={16} />
-            Start Scan
-          </Link>
+          {isLoggedIn ? (
+            <>
+              <Link to="/profile" className="nav-icon-btn" title="Profile">
+                <User size={20} />
+              </Link>
+              <Link to="/settings" className="nav-icon-btn" title="Settings">
+                <Settings size={20} />
+              </Link>
+              <Link to="/workout" className="btn btn-primary btn-sm">
+                <Scan size={16} />
+                Start Scan
+              </Link>
+              <button className="nav-icon-btn" title="Logout" onClick={handleLogout}>
+                <LogOut size={20} />
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="btn btn-primary btn-sm">
+              <LogIn size={16} />
+              Login
+            </Link>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -82,12 +108,23 @@ const Navbar = () => {
           </Link>
         ))}
         <div className="mobile-menu-actions">
-          <Link to="/profile" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
-            <User size={18} /> Profile
-          </Link>
-          <Link to="/settings" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
-            <Settings size={18} /> Settings
-          </Link>
+          {isLoggedIn ? (
+            <>
+              <Link to="/profile" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                <User size={18} /> Profile
+              </Link>
+              <Link to="/settings" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                <Settings size={18} /> Settings
+              </Link>
+              <button className="mobile-nav-link" onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}>
+                <LogOut size={18} /> Logout
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+              <LogIn size={18} /> Login
+            </Link>
+          )}
         </div>
         <Link to="/workout" className="btn btn-primary mobile-cta" onClick={() => setIsMobileMenuOpen(false)}>
           <Scan size={18} />
