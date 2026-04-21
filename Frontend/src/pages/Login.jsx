@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Activity, CheckCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { apiFetch, saveAuthUser } from '../lib/api';
 import './Login.css';
 
 const Login = () => {
@@ -14,6 +15,7 @@ const Login = () => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -64,18 +66,48 @@ const Login = () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setApiError('');
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      console.log(`${isSignUp ? 'Sign Up' : 'Login'} successful`, formData);
-      
-      // Set logged in state
-      localStorage.setItem('isLoggedIn', 'true');
-      
-      // Redirect to dashboard
+    try {
+      const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
+      const payload = isSignUp
+        ? { name: formData.name, email: formData.email, password: formData.password }
+        : { email: formData.email, password: formData.password };
+
+      console.log('Attempting to connect to:', endpoint);
+      console.log('Payload:', payload);
+
+      const user = await apiFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      console.log('Login successful:', user);
+      saveAuthUser(user);
       navigate('/dashboard');
-    }, 1500);
+    } catch (error) {
+      console.error('Login error:', error);
+      console.error('Error status:', error.status);
+      console.error('Error message:', error.message);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Authentication failed';
+      if (error.message === 'Failed to fetch') {
+        errorMessage = 'Cannot connect to server. Please ensure the backend is running on port 5000.';
+      } else if (error.status === 401) {
+        errorMessage = 'Invalid email or password';
+      } else if (error.status === 400) {
+        errorMessage = error.message || 'Invalid input data';
+      } else if (error.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else {
+        errorMessage = error.message || 'Authentication failed';
+      }
+      
+      setApiError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -128,6 +160,8 @@ const Login = () => {
             </div>
             
             <form onSubmit={handleSubmit} className="login-form">
+              {apiError && <div className="error-text" style={{ marginBottom: '1rem', textAlign: 'center' }}>{apiError}</div>}
+              
               {isSignUp && (
                 <div className="form-group">
                   <label>Full Name</label>

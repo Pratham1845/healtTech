@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   Camera,
@@ -11,6 +11,7 @@ import {
   StopCircle,
   Trash2
 } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 import './EmotionDetection.css';
 
 const SCRIPT_ID = 'face-api-script';
@@ -19,13 +20,13 @@ const DETECTION_INTERVAL = 800;
 const HISTORY_LIMIT = 20;
 
 const EMOTIONS = [
-  { key: 'happy', label: 'Happy', color: '#22C55E', description: 'Positive and uplifted', icon: Smile, emoji: '😊' },
-  { key: 'sad', label: 'Sad', color: '#3B82F6', description: 'Feeling down', icon: Frown, emoji: '😢' },
-  { key: 'neutral', label: 'Neutral', color: '#6B7280', description: 'Calm and balanced', icon: Meh, emoji: '😐' },
-  { key: 'surprised', label: 'Surprised', color: '#F59E0B', description: 'Unexpected reaction', icon: AlertCircle, emoji: '😲' },
-  { key: 'angry', label: 'Angry', color: '#EF4444', description: 'Frustrated or stressed', icon: AlertCircle, emoji: '😠' },
-  { key: 'fearful', label: 'Fearful', color: '#8B5CF6', description: 'Anxious or worried', icon: AlertCircle, emoji: '😨' },
-  { key: 'disgusted', label: 'Disgusted', color: '#10B981', description: 'Uncomfortable reaction', icon: AlertCircle, emoji: '🤢' }
+  { key: 'happy', label: 'Happy', color: '#22C55E', description: 'Positive and uplifted', icon: Smile, emoji: ':)' },
+  { key: 'sad', label: 'Sad', color: '#3B82F6', description: 'Feeling down', icon: Frown, emoji: ':(' },
+  { key: 'neutral', label: 'Neutral', color: '#6B7280', description: 'Calm and balanced', icon: Meh, emoji: ':|' },
+  { key: 'surprised', label: 'Surprised', color: '#F59E0B', description: 'Unexpected reaction', icon: AlertCircle, emoji: ':O' },
+  { key: 'angry', label: 'Angry', color: '#EF4444', description: 'Frustrated or stressed', icon: AlertCircle, emoji: '>:-(' },
+  { key: 'fearful', label: 'Fearful', color: '#8B5CF6', description: 'Anxious or worried', icon: AlertCircle, emoji: ':S' },
+  { key: 'disgusted', label: 'Disgusted', color: '#10B981', description: 'Uncomfortable reaction', icon: AlertCircle, emoji: ':/' }
 ];
 
 function loadFaceApiScript() {
@@ -73,6 +74,7 @@ const EmotionDetection = () => {
     Object.fromEntries(EMOTIONS.map((emotion) => [emotion.key, 0]))
   );
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [savedHealthScore, setSavedHealthScore] = useState(null);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -84,6 +86,7 @@ const EmotionDetection = () => {
   const pausedMsRef = useRef(0);
   const isPausedRef = useRef(false);
   const isProcessingRef = useRef(false);
+  const hasSavedRef = useRef(false);
 
   const clearDetectionInterval = useCallback(() => {
     if (detectIntervalRef.current) {
@@ -117,6 +120,9 @@ const EmotionDetection = () => {
   }, [clearTimerInterval, updateSessionTime]);
 
   const loadModels = useCallback(async () => {
+    const dominantKey = currentEmotionKey || 'neutral';
+    const dominantLabel = (EMOTIONS.find((emotion) => emotion.key === dominantKey) || EMOTIONS[2]).label;
+
     try {
       setStatusText('Loading AI models...');
       setError('');
@@ -148,6 +154,9 @@ const EmotionDetection = () => {
     }
 
     isProcessingRef.current = true;
+
+    const dominantKey = currentEmotionKey || 'neutral';
+    const dominantLabel = (EMOTIONS.find((emotion) => emotion.key === dominantKey) || EMOTIONS[2]).label;
 
     try {
       const detections = await faceapi
@@ -225,23 +234,66 @@ const EmotionDetection = () => {
     setEmotionHistory([]);
     setEmotionCounts(Object.fromEntries(EMOTIONS.map((emotion) => [emotion.key, 0])));
     setSessionSeconds(0);
+    hasSavedRef.current = false;
 
     sessionStartRef.current = 0;
     pauseStartRef.current = 0;
     pausedMsRef.current = 0;
   }, []);
 
-  const endSession = useCallback(() => {
+
+  const saveEmotionSession = useCallback(async () => {
+    if (hasSavedRef.current || sessionSeconds <= 0 || emotionHistory.length === 0) {
+      return;
+    }
+
+    const dominantKey = currentEmotionKey || 'neutral';
+    const dominantLabel = (EMOTIONS.find((emotion) => emotion.key === dominantKey) || EMOTIONS[2]).label;
+
+    try {
+      const response = await apiFetch('/api/activity', {
+        method: 'POST',
+        body: JSON.stringify({
+          source: 'emotion',
+          sessionStartedAt: sessionStartRef.current ? new Date(sessionStartRef.current).toISOString() : new Date().toISOString(),
+          sessionEndedAt: new Date().toISOString(),
+          durationSeconds: sessionSeconds,
+          activeSeconds: sessionSeconds,
+          mood: dominantLabel,
+          activityLevel: 'Low',
+          emotion: {
+            dominant: dominantKey,
+            confidence,
+            counts: emotionCounts
+          },
+          metadata: {
+            detections: emotionHistory.length
+          }
+        })
+      });
+
+      hasSavedRef.current = true;
+      setSavedHealthScore(response?.healthScore ?? null);
+    } catch (err) {
+      setError('Unable to save emotion session to backend.');
+    }
+  }, [confidence, currentEmotionKey, emotionCounts, emotionHistory.length, sessionSeconds]);
+
+  const endSession = useCallback(async () => {
+    await saveEmotionSession();
     stopCamera();
     resetSessionData();
     setStatusText(isModelReady ? 'Session ended' : 'Waiting for model');
-  }, [isModelReady, resetSessionData, stopCamera]);
+  }, [isModelReady, resetSessionData, saveEmotionSession, stopCamera]);
 
   const startCamera = useCallback(async () => {
     if (!isModelReady) {
       setError('Models are still loading. Please wait a moment.');
       return;
     }
+
+    const dominantKey = currentEmotionKey || 'neutral';
+    const dominantLabel = (EMOTIONS.find((emotion) => emotion.key === dominantKey) || EMOTIONS[2]).label;
 
     try {
       setError('');
@@ -262,6 +314,8 @@ const EmotionDetection = () => {
       sessionStartRef.current = Date.now();
       pauseStartRef.current = 0;
       pausedMsRef.current = 0;
+      hasSavedRef.current = false;
+      
 
       startTimer();
       startDetectionLoop();
@@ -499,6 +553,7 @@ const EmotionDetection = () => {
                   {' '}({dominantEmotion.count})
                 </li>
                 <li>Session time: {sessionSeconds}s</li>
+                <li>Saved health score: {savedHealthScore ?? '--'}</li>
                 <li>Model status: {isModelReady ? 'Loaded' : 'Loading'}</li>
               </ul>
             </div>
@@ -510,3 +565,6 @@ const EmotionDetection = () => {
 };
 
 export default EmotionDetection;
+
+
+

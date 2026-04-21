@@ -62,6 +62,8 @@ const Signup = () => {
     setApiError('');
 
     try {
+      console.log('Attempting signup...');
+      
       const user = await apiFetch('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({
@@ -71,10 +73,27 @@ const Signup = () => {
         })
       });
 
+      console.log('Signup successful:', user);
       saveAuthUser(user);
       navigate('/dashboard', { replace: true });
     } catch (error) {
-      setApiError(error.message || 'Sign up failed');
+      console.error('Signup error:', error);
+      console.error('Error status:', error.status);
+      console.error('Error message:', error.message);
+
+      // Provide more specific error messages
+      let errorMessage = 'Sign up failed';
+      if (error.message === 'Failed to fetch' || error.isNetworkError) {
+        errorMessage = 'Cannot connect to server. Please ensure the backend is running on port 5000.';
+      } else if (error.status === 400) {
+        errorMessage = error.message || 'User may already exist or invalid input';
+      } else if (error.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else {
+        errorMessage = error.message || 'Sign up failed';
+      }
+
+      setApiError(errorMessage);
     } finally {
       setIsLoading(false);
     }

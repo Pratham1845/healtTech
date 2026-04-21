@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const exerciseBreakdownSchema = new mongoose.Schema(
   {
@@ -61,6 +61,10 @@ const activitySessionSchema = new mongoose.Schema(
       default: 0
     },
     fitnessScore: {
+      type: Number,
+      default: 0
+    },
+    healthScore: {
       type: Number,
       default: 0
     },

@@ -8,7 +8,7 @@ export const generateFitnessReply = async (inputOrPayload, maybeHealthData) => {
     const contextData = typeof inputOrPayload === 'string' ? maybeHealthData : inputOrPayload?.healthData;
 
     if (!queryText || !queryText.trim()) {
-      return 'Please type your question so I can help with a short fitness plan.';
+      return { text: 'Please type your question so I can help with a short fitness plan.', healthScore: null };
     }
 
     const data = await apiFetch('/api/chat', {
@@ -19,9 +19,12 @@ export const generateFitnessReply = async (inputOrPayload, maybeHealthData) => {
       })
     });
 
-    return data?.text || FALLBACK_MESSAGE;
+    return {
+      text: data?.text || FALLBACK_MESSAGE,
+      healthScore: data?.healthScore ?? null
+    };
   } catch (error) {
-    return FALLBACK_MESSAGE;
+    return { text: FALLBACK_MESSAGE, healthScore: null };
   }
 };
 

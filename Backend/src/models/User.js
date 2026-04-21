@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema(
     intensityLevel: {
       type: String,
       default: 'Beginner'
+    },
+    healthScore: {
+      type: Number,
+      default: 70
     }
   },
   {

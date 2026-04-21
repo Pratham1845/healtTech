@@ -47,6 +47,9 @@ const Login = () => {
     setApiError('');
 
     try {
+      console.log('Attempting login...');
+      console.log('Payload:', { email: formData.email, password: '***' });
+
       const user = await apiFetch('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({
@@ -54,10 +57,30 @@ const Login = () => {
           password: formData.password
         })
       });
+
+      console.log('Login successful:', user);
       saveAuthUser(user);
       navigate('/dashboard', { replace: true });
     } catch (error) {
-      setApiError(error.message || 'Login failed');
+      console.error('Login error:', error);
+      console.error('Error status:', error.status);
+      console.error('Error message:', error.message);
+
+      // Provide more specific error messages
+      let errorMessage = 'Login failed';
+      if (error.message === 'Failed to fetch' || error.isNetworkError) {
+        errorMessage = 'Cannot connect to server. Please ensure the backend is running on port 5000.';
+      } else if (error.status === 401) {
+        errorMessage = 'Invalid email or password';
+      } else if (error.status === 400) {
+        errorMessage = error.message || 'Invalid input data';
+      } else if (error.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else {
+        errorMessage = error.message || 'Login failed';
+      }
+
+      setApiError(errorMessage);
     } finally {
       setIsLoading(false);
     }

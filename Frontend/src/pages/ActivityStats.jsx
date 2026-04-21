@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, TrendingUp, Activity, Target, Moon, Plus, Save } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import './ActivityStats.css';
@@ -66,7 +66,7 @@ const ActivityStats = () => {
         <div className="page-header">
           <div>
             <h1>Activity <span className="text-gradient">Statistics</span></h1>
-            <p>All values are loaded from backend activity records.</p>
+            <p>Unified analytics from workout, sleep and emotion sessions.</p>
           </div>
           <div className="time-filter">
             <button className={timeFilter === '7' ? 'active' : ''} onClick={() => setTimeFilter('7')}>7d</button>
@@ -78,8 +78,8 @@ const ActivityStats = () => {
         <div className="stats-layout">
           <div className="stats-summary-grid">
             <div className="stat-card glass-card"><div className="stat-icon bg-blue"><Activity size={20} /></div><div className="stat-content"><span className="label">Total Sessions</span><span className="value">{summary?.totalSessions ?? 0}</span></div></div>
-            <div className="stat-card glass-card"><div className="stat-icon bg-cyan"><Target size={20} /></div><div className="stat-content"><span className="label">Avg Fitness Score</span><span className="value">{summary?.avgFitnessScore ?? 0}</span></div></div>
-            <div className="stat-card glass-card"><div className="stat-icon bg-purple"><TrendingUp size={20} /></div><div className="stat-content"><span className="label">Active Minutes</span><span className="value">{summary?.totalActiveMinutes ?? 0}</span></div></div>
+            <div className="stat-card glass-card"><div className="stat-icon bg-cyan"><Target size={20} /></div><div className="stat-content"><span className="label">Avg Health Score</span><span className="value">{summary?.avgHealthScore ?? 0}</span></div></div>
+            <div className="stat-card glass-card"><div className="stat-icon bg-purple"><TrendingUp size={20} /></div><div className="stat-content"><span className="label">Sleep Score</span><span className="value">{summary?.avgSleepScore ?? '--'}</span></div></div>
             <div className="stat-card glass-card"><div className="stat-icon bg-green"><BarChart3 size={20} /></div><div className="stat-content"><span className="label">Consistency</span><span className="value">{summary?.consistency ?? 0}%</span></div></div>
           </div>
 
@@ -87,7 +87,7 @@ const ActivityStats = () => {
             <div className="sleep-score-header">
               <div>
                 <h3><Moon size={24} /> Sleep Score Tracker</h3>
-                <p>Stored in backend as manual activity entries</p>
+                <p>Saved to backend and included in health score.</p>
               </div>
               <button className="btn btn-primary btn-sm" onClick={() => setShowSleepInput(!showSleepInput)}>
                 <Plus size={16} />

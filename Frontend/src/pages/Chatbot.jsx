@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { Send, Bot, User, Sparkles } from 'lucide-react';
 import { fetchChatHistory, generateFitnessReply } from '../lib/gemini';
 import { apiFetch } from '../lib/api';
@@ -11,7 +11,15 @@ const Chatbot = () => {
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [isChatActive, setIsChatActive] = useState(false);
-  const [healthData, setHealthData] = useState({ postureScore: 70, activityLevel: 'Moderate', mood: 'Neutral' });
+  const [currentHealthScore, setCurrentHealthScore] = useState(null);
+  const [healthData, setHealthData] = useState({
+    healthScore: 70,
+    postureScore: 70,
+    sleepScore: null,
+    activityLevel: 'Moderate',
+    mood: 'Neutral',
+    totalActiveMinutes: 0
+  });
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -23,12 +31,22 @@ const Chatbot = () => {
       try {
         const summary = await apiFetch('/api/activity/summary?days=30');
         setHealthData({
+          healthScore: summary?.latestHealthScore ?? summary?.avgHealthScore ?? 70,
           postureScore: summary?.postureScore ?? 70,
+          sleepScore: summary?.avgSleepScore ?? null,
           activityLevel: (summary?.totalActiveMinutes ?? 0) > 150 ? 'High' : 'Moderate',
-          mood: summary?.moodStatus || 'Neutral'
+          mood: summary?.moodStatus || 'Neutral',
+          totalActiveMinutes: summary?.totalActiveMinutes ?? 0
         });
       } catch (error) {
-        setHealthData({ postureScore: 70, activityLevel: 'Moderate', mood: 'Neutral' });
+        setHealthData({
+          healthScore: 70,
+          postureScore: 70,
+          sleepScore: null,
+          activityLevel: 'Moderate',
+          mood: 'Neutral',
+          totalActiveMinutes: 0
+        });
       }
     };
 
@@ -63,7 +81,7 @@ const Chatbot = () => {
     loadHistory();
   }, []);
 
-  const quickPrompts = ["Improve squat form", 'I feel tired today', 'Reduce stress', 'Build weekly plan'];
+  const quickPrompts = ['Improve squat form', 'I feel tired today', 'Reduce stress', 'Build weekly plan'];
 
   const appendMessage = (sender, text) => {
     setMessages((prev) => [
@@ -86,8 +104,16 @@ const Chatbot = () => {
     setLoading(true);
 
     try {
-      const botReply = await generateFitnessReply({ userInput: trimmedText, healthData });
-      appendMessage('bot', botReply || FALLBACK_MESSAGE);
+      const response = await generateFitnessReply({ userInput: trimmedText, healthData });
+      appendMessage('bot', response?.text || FALLBACK_MESSAGE);
+      
+      if (response?.healthScore) {
+        setCurrentHealthScore(response.healthScore);
+        setHealthData((prev) => ({
+          ...prev,
+          healthScore: response.healthScore
+        }));
+      }
     } catch (error) {
       appendMessage('bot', FALLBACK_MESSAGE);
     } finally {
@@ -141,9 +167,29 @@ const Chatbot = () => {
 
           <div className="chat-sidebar glass-card">
             <h3>Health Context</h3>
-            <p className="sidebar-subtitle">These values are loaded from your activity records.</p>
+            <p className="sidebar-subtitle">Context includes sleep, emotion and physical activity data.</p>
+            
+            {currentHealthScore !== null && (
+              <div className="health-score-display" style={{
+                padding: '1rem',
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1))',
+                borderRadius: '12px',
+                marginBottom: '1rem',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)' }}>
+                  {currentHealthScore}
+                </div>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                  Updated Health Score
+                </div>
+              </div>
+            )}
+            
             <div className="context-group">
               <h4>Current Status</h4>
+              <div className="context-item"><span>Health Score:</span><span className="text-accent">{healthData.healthScore ?? '--'}</span></div>
+              <div className="context-item"><span>Sleep Score:</span><span className="text-accent">{healthData.sleepScore ?? '--'}</span></div>
               <div className="context-item"><span>Mood:</span><span className="text-accent">{healthData.mood}</span></div>
               <div className="context-item"><span>Activity Level:</span><span className="text-accent">{healthData.activityLevel}</span></div>
               <div className="context-item"><span>Posture Score:</span><span className="text-accent">{healthData.postureScore ?? '--'}</span></div>

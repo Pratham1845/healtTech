@@ -12,6 +12,7 @@ const serializeUser = (user, token = null) => {
     weightKg: user.weightKg,
     primaryFocus: user.primaryFocus,
     intensityLevel: user.intensityLevel,
+    healthScore: user.healthScore,
     token
   };
 };
@@ -65,7 +66,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     throw new Error('User not found');
   }
 
-  const fields = ['name', 'age', 'heightCm', 'weightKg', 'primaryFocus', 'intensityLevel'];
+  const fields = ['name', 'age', 'heightCm', 'weightKg', 'primaryFocus', 'intensityLevel', 'healthScore'];
   for (const field of fields) {
     if (req.body[field] !== undefined) {
       user[field] = req.body[field];

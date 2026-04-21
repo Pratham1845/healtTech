@@ -20,15 +20,27 @@ const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173,http
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+console.log('Allowed CORS origins:', allowedOrigins);
+
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
-        return;
+      } else {
+        console.log('CORS blocked origin:', origin);
+        console.log('Allowed origins:', allowedOrigins);
+        callback(new Error('Not allowed by CORS'));
       }
-      callback(new Error('CORS blocked for this origin'));
-    }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Content-Length', 'X-Foo'],
+    maxAge: 86400 // 24 hours
   })
 );
 app.use(express.json());
@@ -49,6 +61,17 @@ app.use('/api/activity', activityRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

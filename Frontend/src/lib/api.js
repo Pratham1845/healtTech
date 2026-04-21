@@ -36,19 +36,31 @@ export const apiFetch = async (path, options = {}) => {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers
+    });
 
-  const payload = await response.json().catch(() => ({}));
+    const payload = await response.json().catch(() => ({}));
 
-  if (!response.ok) {
-    const message = payload?.message || payload?.error || 'Request failed';
-    const error = new Error(message);
-    error.status = response.status;
+    if (!response.ok) {
+      const message = payload?.message || payload?.error || 'Request failed';
+      const error = new Error(message);
+      error.status = response.status;
+      throw error;
+    }
+
+    return payload;
+  } catch (error) {
+    // Network errors (like failed to fetch) don't have response
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      console.error('Network error: Cannot reach backend server at', API_BASE_URL);
+      const networkError = new Error('Failed to fetch');
+      networkError.status = 0;
+      networkError.isNetworkError = true;
+      throw networkError;
+    }
     throw error;
   }
-
-  return payload;
 };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { TrendingUp, Activity, PieChart, AlertCircle, MessageCircle, History, Zap, Heart, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StatCard from '../components/StatCard';
@@ -39,7 +39,7 @@ const Dashboard = () => {
         <div className="page-header">
           <div>
             <h1>Your <span className="text-gradient">Dashboard</span></h1>
-            <p>Database-backed overview of your current health activity.</p>
+            <p>Database-backed overview from workout, sleep, and emotion sessions.</p>
           </div>
           <div className="date-filter-btn">
             <span>Last 7 Days</span>
@@ -47,10 +47,34 @@ const Dashboard = () => {
         </div>
 
         <div className="stats-grid">
-          <StatCard icon={Heart} label="Health Score" value={summary?.avgFitnessScore ?? 0} trend="From recorded sessions" trendType="positive" />
-          <StatCard icon={Activity} label="Mood Status" value={summary?.moodStatus ?? 'Neutral'} trend="Latest detected state" trendType="positive" />
-          <StatCard icon={AlertCircle} label="Risk Level" value={summary?.riskLevel ?? 'Low'} trend="Computed from posture" trendType="positive" />
-          <StatCard icon={Zap} label="Today's Activity" value={`${summary?.totalActiveMinutes ?? 0} min`} trend={`${summary?.totalSessions ?? 0} sessions`} trendType="positive" />
+          <StatCard
+            icon={Heart}
+            label="Health Score"
+            value={summary?.latestHealthScore ?? 0}
+            trend={`Avg: ${summary?.avgHealthScore ?? 0}`}
+            trendType="positive"
+          />
+          <StatCard
+            icon={Activity}
+            label="Mood Status"
+            value={summary?.moodStatus ?? 'Neutral'}
+            trend="Latest detected state"
+            trendType="positive"
+          />
+          <StatCard
+            icon={AlertCircle}
+            label="Risk Level"
+            value={summary?.riskLevel ?? 'Low'}
+            trend="Computed from posture + sleep + emotion"
+            trendType="positive"
+          />
+          <StatCard
+            icon={Zap}
+            label="Today's Activity"
+            value={`${summary?.totalActiveMinutes ?? 0} min`}
+            trend={`${summary?.totalSessions ?? 0} sessions`}
+            trendType="positive"
+          />
         </div>
 
         <div className="dashboard-main-grid">
@@ -79,7 +103,7 @@ const Dashboard = () => {
 
           <div className="mood-card glass-card">
             <div className="card-header">
-              <h3>Mood / Posture Trend</h3>
+              <h3>Mood / Emotion Trend</h3>
               <span className="chart-subtitle">Live history</span>
             </div>
             <div className="mood-linear-chart">
@@ -117,15 +141,15 @@ const Dashboard = () => {
               <div className="recommendation-item warning">
                 <div className="rec-icon"><AlertCircle size={18} /></div>
                 <div className="rec-content">
-                  <strong>Consistency</strong>
-                  <span>Current consistency is {summary?.consistency ?? 0}%. Aim for one short session each day.</span>
+                  <strong>Recovery Focus</strong>
+                  <span>Sleep score is {summary?.avgSleepScore ?? '--'}. Prioritize recovery if below 70.</span>
                 </div>
               </div>
               <div className="recommendation-item success">
                 <div className="rec-icon"><TrendingUp size={18} /></div>
                 <div className="rec-content">
                   <strong>Progress Trend</strong>
-                  <span>Your average fitness score is {summary?.avgFitnessScore ?? 0}. Keep progressive overload controlled.</span>
+                  <span>Average health score is {summary?.avgHealthScore ?? 0}. Keep sessions consistent.</span>
                 </div>
               </div>
             </div>
