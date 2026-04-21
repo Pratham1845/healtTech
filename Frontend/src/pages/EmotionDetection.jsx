@@ -1,132 +1,365 @@
-import { useState, useRef, useEffect } from 'react';
-import { Camera, Smile, Frown, Meh, AlertCircle, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AlertCircle,
+  Camera,
+  Download,
+  Frown,
+  Meh,
+  PauseCircle,
+  PlayCircle,
+  Smile,
+  StopCircle,
+  Trash2
+} from 'lucide-react';
 import './EmotionDetection.css';
 
+const SCRIPT_ID = 'face-api-script';
+const MODEL_URL = '/emotion/model';
+const DETECTION_INTERVAL = 800;
+const HISTORY_LIMIT = 20;
+
+const EMOTIONS = [
+  { key: 'happy', label: 'Happy', color: '#22C55E', description: 'Positive and uplifted', icon: Smile, emoji: ':)' },
+  { key: 'sad', label: 'Sad', color: '#3B82F6', description: 'Feeling down', icon: Frown, emoji: ':(' },
+  { key: 'neutral', label: 'Neutral', color: '#6B7280', description: 'Calm and balanced', icon: Meh, emoji: ':|' },
+  { key: 'surprised', label: 'Surprised', color: '#F59E0B', description: 'Unexpected reaction', icon: AlertCircle, emoji: ':O' },
+  { key: 'angry', label: 'Angry', color: '#EF4444', description: 'Frustrated or stressed', icon: AlertCircle, emoji: '>:(' },
+  { key: 'fearful', label: 'Fearful', color: '#8B5CF6', description: 'Anxious or worried', icon: AlertCircle, emoji: 'D:' },
+  { key: 'disgusted', label: 'Disgusted', color: '#10B981', description: 'Uncomfortable reaction', icon: AlertCircle, emoji: ':P' }
+];
+
+function loadFaceApiScript() {
+  return new Promise((resolve, reject) => {
+    if (window.faceapi) {
+      resolve(window.faceapi);
+      return;
+    }
+
+    const existing = document.getElementById(SCRIPT_ID);
+    if (existing) {
+      existing.addEventListener('load', () => resolve(window.faceapi), { once: true });
+      existing.addEventListener('error', reject, { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.id = SCRIPT_ID;
+    script.src = '/emotion/face-api.min.js';
+    script.async = true;
+    script.onload = () => resolve(window.faceapi);
+    script.onerror = () => reject(new Error('Failed to load face-api script'));
+    document.body.appendChild(script);
+  });
+}
+
+function getDominantExpression(expressions) {
+  return Object.entries(expressions).reduce(
+    (best, [emotion, score]) => (score > best.score ? { emotion, score } : best),
+    { emotion: 'neutral', score: 0 }
+  );
+}
+
 const EmotionDetection = () => {
-  const [isDetecting, setIsDetecting] = useState(false);
-  const [currentEmotion, setCurrentEmotion] = useState(null);
+  const [isModelReady, setIsModelReady] = useState(false);
+  const [isCameraOn, setIsCameraOn] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [error, setError] = useState('');
+  const [statusText, setStatusText] = useState('Loading AI models...');
+
+  const [currentEmotionKey, setCurrentEmotionKey] = useState('neutral');
   const [confidence, setConfidence] = useState(0);
   const [emotionHistory, setEmotionHistory] = useState([]);
-  const [error, setError] = useState('');
+  const [emotionCounts, setEmotionCounts] = useState(() =>
+    Object.fromEntries(EMOTIONS.map((emotion) => [emotion.key, 0]))
+  );
+  const [sessionSeconds, setSessionSeconds] = useState(0);
+
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const detectIntervalRef = useRef(null);
+  const timerIntervalRef = useRef(null);
 
-  const emotions = [
-    { name: 'Happy', icon: Smile, color: '#22C55E', description: 'Positive and uplifted' },
-    { name: 'Sad', icon: Frown, color: '#3B82F6', description: 'Feeling down' },
-    { name: 'Neutral', icon: Meh, color: '#6B7280', description: 'Calm and balanced' },
-    { name: 'Surprised', icon: AlertCircle, color: '#F59E0B', description: 'Unexpected reaction' },
-    { name: 'Angry', icon: AlertCircle, color: '#EF4444', description: 'Frustrated or stressed' },
-    { name: 'Fearful', icon: AlertCircle, color: '#8B5CF6', description: 'Anxious or worried' }
-  ];
+  const sessionStartRef = useRef(0);
+  const pauseStartRef = useRef(0);
+  const pausedMsRef = useRef(0);
+  const isProcessingRef = useRef(false);
 
-  const startCamera = async () => {
+  const clearDetectionInterval = useCallback(() => {
+    if (detectIntervalRef.current) {
+      window.clearInterval(detectIntervalRef.current);
+      detectIntervalRef.current = null;
+    }
+  }, []);
+
+  const clearTimerInterval = useCallback(() => {
+    if (timerIntervalRef.current) {
+      window.clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+  }, []);
+
+  const updateSessionTime = useCallback(() => {
+    if (!sessionStartRef.current) {
+      setSessionSeconds(0);
+      return;
+    }
+
+    const now = Date.now();
+    const activeMs = now - sessionStartRef.current - pausedMsRef.current - (isPaused ? now - pauseStartRef.current : 0);
+    setSessionSeconds(Math.max(0, Math.floor(activeMs / 1000)));
+  }, [isPaused]);
+
+  const startTimer = useCallback(() => {
+    clearTimerInterval();
+    timerIntervalRef.current = window.setInterval(updateSessionTime, 1000);
+    updateSessionTime();
+  }, [clearTimerInterval, updateSessionTime]);
+
+  const loadModels = useCallback(async () => {
     try {
+      setStatusText('Loading AI models...');
       setError('');
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setIsDetecting(true);
-        startEmotionDetection();
-      }
+
+      const faceapi = await loadFaceApiScript();
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
+      ]);
+
+      setIsModelReady(true);
+      setStatusText('Model ready');
     } catch (err) {
-      setError('Unable to access camera. Please grant permission and try again.');
-      console.error('Camera error:', err);
+      setError('Could not load emotion models. Check public emotion assets and refresh.');
+      setStatusText('Model load failed');
     }
-  };
+  }, []);
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
+  const analyzeFrame = useCallback(async () => {
+    if (isProcessingRef.current || isPaused) {
+      return;
     }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setIsDetecting(false);
-    setCurrentEmotion(null);
-    setConfidence(0);
-  };
 
-  const startEmotionDetection = () => {
-    // Simulated emotion detection using random intervals
-    // In production, this would use a real ML model like face-api.js or TensorFlow.js
-    const detectInterval = setInterval(() => {
-      if (!isDetecting) {
-        clearInterval(detectInterval);
+    const video = videoRef.current;
+    const faceapi = window.faceapi;
+
+    if (!video || !faceapi || video.readyState < 2) {
+      return;
+    }
+
+    isProcessingRef.current = true;
+
+    try {
+      const detections = await faceapi
+        .detectAllFaces(
+          video,
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize: 224,
+            scoreThreshold: 0.5
+          })
+        )
+        .withFaceExpressions();
+
+      if (!detections.length) {
+        setStatusText('No face detected');
         return;
       }
 
-      // Simulate emotion detection with weighted probabilities
-      const randomEmotion = simulateEmotionDetection();
-      const randomConfidence = Math.floor(Math.random() * 30) + 70; // 70-99%
+      const dominant = getDominantExpression(detections[0].expressions);
+      const matchedEmotion = EMOTIONS.find((emotion) => emotion.key === dominant.emotion) || EMOTIONS[2];
 
-      setCurrentEmotion(randomEmotion);
-      setConfidence(randomConfidence);
+      setCurrentEmotionKey(matchedEmotion.key);
+      setConfidence(Math.round(dominant.score * 100));
+      setStatusText('Live detection running');
 
-      // Add to history
-      setEmotionHistory(prev => {
-        const newHistory = [
-          { 
-            emotion: randomEmotion.name, 
-            confidence: randomConfidence,
+      setEmotionCounts((prev) => ({
+        ...prev,
+        [matchedEmotion.key]: (prev[matchedEmotion.key] || 0) + 1
+      }));
+
+      setEmotionHistory((prev) => {
+        const next = [
+          {
+            emotion: matchedEmotion.key,
+            confidence: Math.round(dominant.score * 100),
             timestamp: new Date().toLocaleTimeString()
           },
           ...prev
         ];
-        return newHistory.slice(0, 10); // Keep last 10 detections
+        return next.slice(0, HISTORY_LIMIT);
       });
-    }, 2000); // Detect every 2 seconds
-
-    return () => clearInterval(detectInterval);
-  };
-
-  const simulateEmotionDetection = () => {
-    // Weighted random selection to simulate realistic detection
-    const weights = [35, 10, 30, 10, 5, 10]; // Happy, Sad, Neutral, Surprised, Angry, Fearful
-    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-    let random = Math.random() * totalWeight;
-
-    for (let i = 0; i < emotions.length; i++) {
-      random -= weights[i];
-      if (random <= 0) {
-        return emotions[i];
-      }
+    } catch (err) {
+      setError('Detection error occurred. Try restarting camera.');
+      setStatusText('Detection error');
+    } finally {
+      isProcessingRef.current = false;
     }
-    return emotions[2]; // Default to Neutral
-  };
+  }, [isPaused]);
 
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
+  const startDetectionLoop = useCallback(() => {
+    clearDetectionInterval();
+    detectIntervalRef.current = window.setInterval(analyzeFrame, DETECTION_INTERVAL);
+  }, [analyzeFrame, clearDetectionInterval]);
+
+  const stopCamera = useCallback(() => {
+    clearDetectionInterval();
+    clearTimerInterval();
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setIsCameraOn(false);
+    setIsPaused(false);
+    setStatusText(isModelReady ? 'Camera stopped' : 'Model not ready');
+  }, [clearDetectionInterval, clearTimerInterval, isModelReady]);
+
+  const resetSessionData = useCallback(() => {
+    setCurrentEmotionKey('neutral');
+    setConfidence(0);
+    setEmotionHistory([]);
+    setEmotionCounts(Object.fromEntries(EMOTIONS.map((emotion) => [emotion.key, 0])));
+    setSessionSeconds(0);
+
+    sessionStartRef.current = 0;
+    pauseStartRef.current = 0;
+    pausedMsRef.current = 0;
   }, []);
 
-  const getCurrentEmotionData = () => {
-    return emotions.find(e => e.name === currentEmotion?.name) || emotions[2];
-  };
+  const endSession = useCallback(() => {
+    stopCamera();
+    resetSessionData();
+    setStatusText(isModelReady ? 'Session ended' : 'Waiting for model');
+  }, [isModelReady, resetSessionData, stopCamera]);
 
-  const getEmotionIcon = (emotionName) => {
-    const emotion = emotions.find(e => e.name === emotionName);
-    return emotion ? emotion.icon : Meh;
-  };
+  const startCamera = useCallback(async () => {
+    if (!isModelReady) {
+      setError('Models are still loading. Please wait a moment.');
+      return;
+    }
 
-  const getEmotionColor = (emotionName) => {
-    const emotion = emotions.find(e => e.name === emotionName);
-    return emotion ? emotion.color : '#6B7280';
-  };
+    try {
+      setError('');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      streamRef.current = stream;
+
+      if (!videoRef.current) {
+        return;
+      }
+
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play();
+
+      setIsCameraOn(true);
+      setIsPaused(false);
+      setStatusText('Camera live');
+
+      sessionStartRef.current = Date.now();
+      pauseStartRef.current = 0;
+      pausedMsRef.current = 0;
+
+      startTimer();
+      startDetectionLoop();
+    } catch (err) {
+      setError('Unable to access camera. Please grant permission and try again.');
+      setStatusText('Camera permission required');
+    }
+  }, [isModelReady, startDetectionLoop, startTimer]);
+
+  const togglePauseSession = useCallback(() => {
+    if (!isCameraOn) {
+      return;
+    }
+
+    if (isPaused) {
+      pausedMsRef.current += Date.now() - pauseStartRef.current;
+      pauseStartRef.current = 0;
+      setIsPaused(false);
+      setStatusText('Live detection running');
+      startDetectionLoop();
+      return;
+    }
+
+    pauseStartRef.current = Date.now();
+    setIsPaused(true);
+    setStatusText('Session paused');
+    clearDetectionInterval();
+  }, [clearDetectionInterval, isCameraOn, isPaused, startDetectionLoop]);
+
+  const clearHistory = useCallback(() => {
+    setEmotionHistory([]);
+    setEmotionCounts(Object.fromEntries(EMOTIONS.map((emotion) => [emotion.key, 0])));
+  }, []);
+
+  const exportSession = useCallback(() => {
+    if (!emotionHistory.length) {
+      setError('No detections available to export yet.');
+      return;
+    }
+
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      sessionSeconds,
+      currentEmotion: currentEmotionKey,
+      confidence,
+      counts: emotionCounts,
+      history: emotionHistory
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `emotion-session-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }, [confidence, currentEmotionKey, emotionCounts, emotionHistory, sessionSeconds]);
+
+  const dominantEmotion = useMemo(() => {
+    const [emotionKey, count] = Object.entries(emotionCounts).reduce(
+      (best, entry) => (entry[1] > best[1] ? entry : best),
+      ['neutral', 0]
+    );
+
+    return {
+      emotionKey,
+      count
+    };
+  }, [emotionCounts]);
+
+  const currentEmotion = useMemo(() => {
+    return EMOTIONS.find((emotion) => emotion.key === currentEmotionKey) || EMOTIONS[2];
+  }, [currentEmotionKey]);
+
+  useEffect(() => {
+    loadModels();
+
+    return () => {
+      clearDetectionInterval();
+      clearTimerInterval();
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [clearDetectionInterval, clearTimerInterval, loadModels]);
+
+  useEffect(() => {
+    updateSessionTime();
+  }, [isPaused, updateSessionTime]);
 
   return (
     <div className="page-container emotion-page">
       <div className="container">
         <div className="page-header">
           <div>
-            <h1>Emotion <span className="text-gradient">Detection</span></h1>
-            <p>Real-time emotion analysis using your camera and AI-powered facial recognition.</p>
+            <h1>
+              Emotion <span className="text-gradient">Detection</span>
+            </h1>
+            <p>Integrated face-api model from your EmotionDetection folder with live camera controls.</p>
           </div>
         </div>
 
@@ -138,92 +371,88 @@ const EmotionDetection = () => {
         )}
 
         <div className="emotion-layout">
-          {/* Main Detection Area */}
           <div className="emotion-main glass-card">
             <div className="camera-container">
-              <video 
-                ref={videoRef} 
-                autoPlay 
-                playsInline 
-                muted
-                className={`camera-feed ${isDetecting ? 'active' : ''}`}
-              />
-              
-              {!isDetecting && (
+              <video ref={videoRef} autoPlay playsInline muted className={`camera-feed ${isCameraOn ? 'active' : ''}`} />
+
+              {!isCameraOn && (
                 <div className="camera-placeholder">
                   <Camera size={64} />
-                  <h3>Camera Not Active</h3>
-                  <p>Click "Start Detection" to begin emotion analysis</p>
+                  <h3>Camera Off</h3>
+                  <p>Turn on camera to start live emotion analysis.</p>
                 </div>
               )}
 
-              {isDetecting && currentEmotion && (
+              {isCameraOn && (
                 <div className="emotion-overlay">
-                  <div 
-                    className="emotion-badge"
-                    style={{ backgroundColor: getCurrentEmotionData().color }}
-                  >
-                    {(() => {
-                      const IconComponent = getCurrentEmotionData().icon;
-                      return IconComponent && <IconComponent size={24} />;
-                    })()}
-                    <span>{currentEmotion.name}</span>
+                  <div className="emotion-badge" style={{ backgroundColor: currentEmotion.color }}>
+                    <span>{currentEmotion.emoji}</span>
+                    <span>{currentEmotion.label}</span>
                     <span className="confidence">{confidence}%</span>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="detection-controls">
-              {!isDetecting ? (
-                <button className="btn btn-primary btn-lg" onClick={startCamera}>
+            <div className="status-row">
+              <span className={`status-dot ${isCameraOn && !isPaused ? 'live' : ''}`}></span>
+              <span>{statusText}</span>
+            </div>
+
+            <div className="detection-controls multi-controls">
+              {!isCameraOn ? (
+                <button className="btn btn-primary btn-lg" onClick={startCamera} disabled={!isModelReady}>
                   <Camera size={20} />
-                  Start Detection
+                  Camera On
                 </button>
               ) : (
                 <button className="btn btn-secondary btn-lg" onClick={stopCamera}>
-                  <RefreshCw size={20} />
-                  Stop Detection
+                  <StopCircle size={20} />
+                  Camera Off
                 </button>
               )}
+
+              <button className="btn btn-secondary btn-lg" onClick={togglePauseSession} disabled={!isCameraOn}>
+                {isPaused ? <PlayCircle size={20} /> : <PauseCircle size={20} />}
+                {isPaused ? 'Resume Session' : 'Pause Session'}
+              </button>
+
+              <button className="btn btn-danger btn-lg" onClick={endSession}>
+                <StopCircle size={20} />
+                End Session
+              </button>
             </div>
 
-            {isDetecting && currentEmotion && (
-              <div className="current-emotion-display">
-                <h3>Current Emotion</h3>
-                <div 
-                  className="emotion-display-card"
-                  style={{ borderColor: getCurrentEmotionData().color }}
-                >
-                  <div 
-                    className="emotion-icon-large"
-                    style={{ color: getCurrentEmotionData().color }}
-                  >
-                    {(() => {
-                      const IconComponent = getCurrentEmotionData().icon;
-                      return IconComponent && <IconComponent size={48} />;
-                    })()}
-                  </div>
-                  <h2 style={{ color: getCurrentEmotionData().color }}>
-                    {currentEmotion.name}
-                  </h2>
-                  <p>{getCurrentEmotionData().description}</p>
-                  <div className="confidence-bar">
-                    <div 
-                      className="confidence-fill"
-                      style={{ 
-                        width: `${confidence}%`,
-                        backgroundColor: getCurrentEmotionData().color
-                      }}
-                    ></div>
-                  </div>
-                  <span className="confidence-text">Confidence: {confidence}%</span>
+            <div className="detection-controls multi-controls compact">
+              <button className="btn btn-secondary" onClick={clearHistory}>
+                <Trash2 size={18} />
+                Clear Log
+              </button>
+              <button className="btn btn-primary" onClick={exportSession}>
+                <Download size={18} />
+                Export JSON
+              </button>
+            </div>
+
+            <div className="current-emotion-display">
+              <h3>Current Emotion</h3>
+              <div className="emotion-display-card" style={{ borderColor: currentEmotion.color }}>
+                <div className="emotion-icon-large" style={{ color: currentEmotion.color }}>
+                  <span className="emoji-large">{currentEmotion.emoji}</span>
                 </div>
+                <h2 style={{ color: currentEmotion.color }}>{currentEmotion.label}</h2>
+                <p>{currentEmotion.description}</p>
+                <div className="confidence-bar">
+                  <div
+                    className="confidence-fill"
+                    style={{ width: `${confidence}%`, backgroundColor: currentEmotion.color }}
+                  ></div>
+                </div>
+                <span className="confidence-text">Confidence: {confidence}%</span>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Sidebar - History & Info */}
           <div className="emotion-sidebar">
             <div className="emotion-history glass-card">
               <h3>Detection History</h3>
@@ -232,17 +461,16 @@ const EmotionDetection = () => {
                   <p className="empty-state">No detections yet. Start the camera to begin analysis.</p>
                 ) : (
                   emotionHistory.map((item, idx) => {
-                    const IconComponent = getEmotionIcon(item.emotion);
+                    const emotion = EMOTIONS.find((entry) => entry.key === item.emotion) || EMOTIONS[2];
+                    const IconComponent = emotion.icon;
+
                     return (
-                      <div key={idx} className="history-item">
-                        <div 
-                          className="history-icon"
-                          style={{ color: getEmotionColor(item.emotion) }}
-                        >
+                      <div key={`${item.timestamp}-${idx}`} className="history-item">
+                        <div className="history-icon" style={{ color: emotion.color }}>
                           <IconComponent size={20} />
                         </div>
                         <div className="history-details">
-                          <span className="history-emotion">{item.emotion}</span>
+                          <span className="history-emotion">{emotion.label}</span>
                           <span className="history-confidence">{item.confidence}% confidence</span>
                           <span className="history-time">{item.timestamp}</span>
                         </div>
@@ -254,13 +482,16 @@ const EmotionDetection = () => {
             </div>
 
             <div className="emotion-info glass-card">
-              <h3>How It Works</h3>
+              <h3>Session Stats</h3>
               <ul className="info-list">
-                <li>Camera captures facial expressions in real-time</li>
-                <li>AI analyzes facial landmarks and muscle movements</li>
-                <li>Emotions are classified into 6 categories</li>
-                <li>Confidence score shows detection accuracy</li>
-                <li>History tracks your emotional patterns</li>
+                <li>Total detections: {emotionHistory.length}</li>
+                <li>
+                  Dominant emotion:{' '}
+                  {(EMOTIONS.find((emotion) => emotion.key === dominantEmotion.emotionKey) || EMOTIONS[2]).label}
+                  {' '}({dominantEmotion.count})
+                </li>
+                <li>Session time: {sessionSeconds}s</li>
+                <li>Model status: {isModelReady ? 'Loaded' : 'Loading'}</li>
               </ul>
             </div>
           </div>
