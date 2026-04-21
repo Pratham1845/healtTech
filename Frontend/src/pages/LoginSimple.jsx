@@ -1,35 +1,28 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch, saveAuthUser } from '../lib/api';
 import './Login.css';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setApiError('');
     if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -48,16 +41,26 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setApiError('');
 
-    setTimeout(() => {
-      setIsLoading(false);
-      localStorage.setItem('isLoggedIn', 'true');
+    try {
+      const user = await apiFetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
+      });
+      saveAuthUser(user);
       navigate('/dashboard', { replace: true });
-    }, 1000);
+    } catch (error) {
+      setApiError(error.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -77,8 +80,8 @@ const Login = () => {
               <label>Email Address</label>
               <div className="input-wrapper">
                 <Mail size={18} className="input-icon" />
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   name="email"
                   placeholder="Enter your email"
                   value={formData.email}
@@ -93,15 +96,15 @@ const Login = () => {
               <label>Password</label>
               <div className="input-wrapper">
                 <Lock size={18} className="input-icon" />
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
+                <input
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
                   className={errors.password ? 'error' : ''}
                 />
-                <button 
+                <button
                   type="button"
                   className="toggle-password"
                   onClick={() => setShowPassword(!showPassword)}
@@ -112,8 +115,10 @@ const Login = () => {
               {errors.password && <span className="error-text">{errors.password}</span>}
             </div>
 
-            <button 
-              type="submit" 
+            {apiError && <div className="error-text">{apiError}</div>}
+
+            <button
+              type="submit"
               className="btn btn-primary w-full login-btn"
               disabled={isLoading}
             >
@@ -133,10 +138,6 @@ const Login = () => {
                 Don't have an account?{' '}
                 <a href="/signup" className="signup-link-simple">Sign up</a>
               </p>
-            </div>
-            <div className="demo-info">
-              <p><strong>Demo Account:</strong></p>
-              <p>demo@zenith.com | demo123</p>
             </div>
           </div>
         </div>

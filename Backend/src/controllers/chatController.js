@@ -107,6 +107,7 @@ const generateChatReply = asyncHandler(async (req, res) => {
   const result = await callGemini(userInput, contextData);
 
   const savedMessage = await ChatMessage.create({
+    user: req.user._id,
     userInput,
     botReply: result.text,
     healthData: {
@@ -129,7 +130,7 @@ const generateChatReply = asyncHandler(async (req, res) => {
 
 const getChatHistory = asyncHandler(async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 50, 200);
-  const history = await ChatMessage.find().sort({ createdAt: -1 }).limit(limit).lean();
+  const history = await ChatMessage.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(limit).lean();
 
   res.json(
     history.map((item) => ({

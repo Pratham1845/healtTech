@@ -1,11 +1,11 @@
 import { Navigate } from 'react-router-dom';
+import { getAuthToken } from '../lib/api';
 
 const ProtectedRoute = ({ children }) => {
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  const token = getAuthToken();
 
-  if (!isLoggedIn) {
-    // Redirect to landing page if not logged in
-    return <Navigate to="/" replace />;
+  if (!token) {
+    return <Navigate to="/login" replace />;
   }
 
   return children;

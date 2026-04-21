@@ -7,6 +7,7 @@ import {
   RefreshCw,
   StopCircle
 } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 import './WorkoutCam.css';
 
 const squatImage = '/assets/squads.jpeg';
@@ -784,11 +785,66 @@ const WorkoutCam = () => {
     ]);
   }, [currentExercise, initExerciseModules]);
 
-  const endSession = useCallback(() => {
+  const saveWorkoutSession = useCallback(async () => {
+    const appState = appStateRef.current;
+    const modules = exercisesRef.current || {};
+    const durationSeconds = appState.sessionStartMs ? Math.max(0, Math.round((Date.now() - appState.sessionStartMs) / 1000)) : 0;
+    const activeSeconds = Math.round(appState.activeMs / 1000);
+
+    const exerciseBreakdown = Object.values(modules).map((exercise) => {
+      const reps = exercise.state.reps || 0;
+      const correct = exercise.state.correctReps || 0;
+      return {
+        name: exercise.label,
+        reps,
+        accuracy: reps > 0 ? Math.round((correct / reps) * 100) : 0
+      };
+    });
+
+    const totalRepsCount = exerciseBreakdown.reduce((sum, item) => sum + item.reps, 0);
+    const totalCorrectCount = Object.values(modules).reduce((sum, exercise) => sum + (exercise.state.correctReps || 0), 0);
+
+    if (!durationSeconds && !totalRepsCount && !activeSeconds) {
+      return;
+    }
+
+    const postureScore = totalRepsCount > 0 ? Math.round((totalCorrectCount / totalRepsCount) * 100) : null;
+    const activityRatio = durationSeconds > 0 ? activeSeconds / durationSeconds : 0;
+    const activityLevel = activityRatio >= 0.7 ? 'High' : activityRatio >= 0.4 ? 'Moderate' : 'Low';
+
+    try {
+      await apiFetch('/api/activity', {
+        method: 'POST',
+        body: JSON.stringify({
+          source: 'workout',
+          sessionStartedAt: appState.sessionStartMs ? new Date(appState.sessionStartMs).toISOString() : new Date().toISOString(),
+          sessionEndedAt: new Date().toISOString(),
+          durationSeconds,
+          activeSeconds,
+          totalReps: totalRepsCount,
+          correctReps: totalCorrectCount,
+          accuracy: totalRepsCount > 0 ? Math.round((totalCorrectCount / totalRepsCount) * 100) : 0,
+          fitnessScore: computeFitnessScore(),
+          postureScore,
+          mood: 'Focused',
+          activityLevel,
+          exerciseBreakdown,
+          metadata: {
+            selectedExercise: appState.currentExercise
+          }
+        })
+      });
+    } catch (error) {
+      pushEvent('Could not save session to backend.', 'warning');
+    }
+  }, [computeFitnessScore, pushEvent]);
+
+  const endSession = useCallback(async () => {
+    await saveWorkoutSession();
     stopCamera();
     resetWorkoutState();
     pushEvent('Session ended and metrics reset.', 'warning');
-  }, [pushEvent, resetWorkoutState, stopCamera]);
+  }, [pushEvent, resetWorkoutState, saveWorkoutSession, stopCamera]);
 
   const togglePauseSession = useCallback(() => {
     if (!isCameraOn) {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, User, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch, saveAuthUser } from '../lib/api';
 import './Signup.css';
 
 const Signup = () => {
@@ -13,20 +14,16 @@ const Signup = () => {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setApiError('');
     if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
@@ -59,25 +56,28 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setApiError('');
 
-    setTimeout(() => {
-      setIsLoading(false);
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userName', formData.name);
+    try {
+      const user = await apiFetch('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password
+        })
+      });
+
+      saveAuthUser(user);
       navigate('/dashboard', { replace: true });
-    }, 1000);
-  };
-
-  const handleGoogleSignup = () => {
-    console.log('Google signup clicked');
-    // Implement Google OAuth here
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userName', 'Google User');
-    navigate('/dashboard');
+    } catch (error) {
+      setApiError(error.message || 'Sign up failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -97,8 +97,8 @@ const Signup = () => {
               <label>Full Name</label>
               <div className="input-wrapper">
                 <User size={18} className="input-icon" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="name"
                   placeholder="John Doe"
                   value={formData.name}
@@ -113,8 +113,8 @@ const Signup = () => {
               <label>Email Address</label>
               <div className="input-wrapper">
                 <Mail size={18} className="input-icon" />
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   name="email"
                   placeholder="john@example.com"
                   value={formData.email}
@@ -129,15 +129,15 @@ const Signup = () => {
               <label>Password</label>
               <div className="input-wrapper">
                 <Lock size={18} className="input-icon" />
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
+                <input
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
                   placeholder="Create a password"
                   value={formData.password}
                   onChange={handleChange}
                   className={errors.password ? 'error' : ''}
                 />
-                <button 
+                <button
                   type="button"
                   className="toggle-password"
                   onClick={() => setShowPassword(!showPassword)}
@@ -152,15 +152,15 @@ const Signup = () => {
               <label>Confirm Password</label>
               <div className="input-wrapper">
                 <Lock size={18} className="input-icon" />
-                <input 
-                  type={showConfirmPassword ? 'text' : 'password'} 
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
                   name="confirmPassword"
                   placeholder="Confirm your password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   className={errors.confirmPassword ? 'error' : ''}
                 />
-                <button 
+                <button
                   type="button"
                   className="toggle-password"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -171,8 +171,10 @@ const Signup = () => {
               {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
             </div>
 
-            <button 
-              type="submit" 
+            {apiError && <div className="error-text">{apiError}</div>}
+
+            <button
+              type="submit"
               className="btn btn-primary w-full signup-btn"
               disabled={isLoading}
             >
@@ -185,17 +187,6 @@ const Signup = () => {
               )}
             </button>
           </form>
-
-          <div className="signup-divider">
-            <span>or sign up with</span>
-          </div>
-
-          <button className="btn btn-secondary w-full google-btn" onClick={handleGoogleSignup}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M18.1713 8.36791H17.5001V8.33325H10.0001V11.6666H14.7096C14.0225 13.607 12.1763 14.9999 10.0001 14.9999C7.23882 14.9999 5.00007 12.7612 5.00007 9.99992C5.00007 7.23825 7.23882 4.99992 10.0001 4.99992C11.2746 4.99992 12.4342 5.48075 13.3171 6.26617L15.6742 3.909C14.1859 2.52217 12.1951 1.66659 10.0001 1.66659C5.39799 1.66659 1.66675 5.39784 1.66675 9.99992C1.66675 14.602 5.39799 18.3333 10.0001 18.3333C14.6021 18.3333 18.3334 14.602 18.3334 9.99992C18.3334 9.44117 18.2763 8.89575 18.1713 8.36791Z" fill="currentColor"/>
-            </svg>
-            Continue with Google
-          </button>
 
           <div className="signup-footer">
             <p>

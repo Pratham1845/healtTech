@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Activity, Menu, X, User, Scan, LogIn, LogOut } from 'lucide-react';
+import { clearAuthUser, getAuthToken } from '../lib/api';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -18,14 +19,12 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Check if user is logged in (from localStorage or session)
   useEffect(() => {
-    const userLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(userLoggedIn);
+    setIsLoggedIn(Boolean(getAuthToken()));
   }, [location]);
 
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
+    clearAuthUser();
     setIsLoggedIn(false);
     navigate('/');
   };
@@ -42,18 +41,16 @@ const Navbar = () => {
   return (
     <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container navbar-container">
-        {/* Left: Logo */}
         <Link to="/" className="logo">
           <Activity className="logo-icon" size={28} />
           <span className="logo-text">Zenith Health</span>
         </Link>
 
-        {/* Center: Navigation Links */}
         <div className="nav-links desktop-only">
           {navLinks.map((link) => (
-            <Link 
-              key={link.name} 
-              to={link.href} 
+            <Link
+              key={link.name}
+              to={link.href}
               className={`nav-link ${location.pathname === link.href ? 'active' : ''}`}
             >
               {link.name}
@@ -61,7 +58,6 @@ const Navbar = () => {
           ))}
         </div>
 
-        {/* Right: Actions */}
         <div className="nav-actions desktop-only">
           {isLoggedIn ? (
             <>
@@ -84,8 +80,7 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <button 
+        <button
           className="mobile-menu-btn mobile-only"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
@@ -93,12 +88,11 @@ const Navbar = () => {
         </button>
       </div>
 
-      {/* Mobile Menu */}
       <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
         {navLinks.map((link) => (
-          <Link 
-            key={link.name} 
-            to={link.href} 
+          <Link
+            key={link.name}
+            to={link.href}
             className={`mobile-nav-link ${location.pathname === link.href ? 'active' : ''}`}
             onClick={() => setIsMobileMenuOpen(false)}
           >

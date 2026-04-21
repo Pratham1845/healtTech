@@ -1,18 +1,59 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { User, Target, Shield, Heart } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 import './Profile.css';
 
 const Profile = () => {
   const [isEditingVitals, setIsEditingVitals] = useState(false);
-  const [vitals, setVitals] = useState({ age: '28', height: '180 cm', weight: '75 kg' });
+  const [profile, setProfile] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await apiFetch('/api/auth/profile');
+        setProfile(data);
+      } catch (err) {
+        setError(err.message || 'Failed to load profile');
+      }
+    };
+
+    load();
+  }, []);
 
   const handleVitalsChange = (field, value) => {
-    setVitals((prev) => ({ ...prev, [field]: value }));
+    setProfile((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleVitalsButton = () => {
+  const toggleEdit = async () => {
+    if (!profile) return;
+
+    if (isEditingVitals) {
+      try {
+        const updated = await apiFetch('/api/auth/profile', {
+          method: 'PUT',
+          body: JSON.stringify({
+            name: profile.name,
+            age: profile.age === '' ? null : Number(profile.age),
+            heightCm: profile.heightCm === '' ? null : Number(profile.heightCm),
+            weightKg: profile.weightKg === '' ? null : Number(profile.weightKg),
+            primaryFocus: profile.primaryFocus,
+            intensityLevel: profile.intensityLevel
+          })
+        });
+        setProfile(updated);
+      } catch (err) {
+        setError(err.message || 'Failed to save profile');
+        return;
+      }
+    }
+
     setIsEditingVitals((prev) => !prev);
   };
+
+  if (!profile) {
+    return <div className="page-container profile-page"><div className="container"><p>Loading profile...</p>{error && <p>{error}</p>}</div></div>;
+  }
 
   return (
     <div className="page-container profile-page">
@@ -22,17 +63,18 @@ const Profile = () => {
           <p>Manage your health profile and fitness goals.</p>
         </div>
 
+        {error && <p className="error-text">{error}</p>}
+
         <div className="profile-layout">
-          {/* User Card */}
           <div className="profile-sidebar">
             <div className="user-card glass-card">
               <div className="user-avatar-large">
                 <User size={48} />
               </div>
-              <h2>Alex Mercer</h2>
-              <p className="user-email">alex@example.com</p>
+              <h2>{profile.name}</h2>
+              <p className="user-email">{profile.email}</p>
               <div className="user-badges">
-                <span className="badge-premium"><Shield size={14} /> Premium Member</span>
+                <span className="badge-premium"><Shield size={14} /> Active Member</span>
               </div>
             </div>
 
@@ -41,80 +83,44 @@ const Profile = () => {
               <div className="vital-item">
                 <span className="label">Age</span>
                 {isEditingVitals ? (
-                  <input
-                    className="vital-input"
-                    type="text"
-                    value={vitals.age}
-                    onChange={(event) => handleVitalsChange('age', event.target.value)}
-                  />
+                  <input className="vital-input" type="number" value={profile.age ?? ''} onChange={(e) => handleVitalsChange('age', e.target.value)} />
                 ) : (
-                  <span className="value">{vitals.age}</span>
+                  <span className="value">{profile.age ?? '--'}</span>
                 )}
               </div>
               <div className="vital-item">
-                <span className="label">Height</span>
+                <span className="label">Height (cm)</span>
                 {isEditingVitals ? (
-                  <input
-                    className="vital-input"
-                    type="text"
-                    value={vitals.height}
-                    onChange={(event) => handleVitalsChange('height', event.target.value)}
-                  />
+                  <input className="vital-input" type="number" value={profile.heightCm ?? ''} onChange={(e) => handleVitalsChange('heightCm', e.target.value)} />
                 ) : (
-                  <span className="value">{vitals.height}</span>
+                  <span className="value">{profile.heightCm ?? '--'}</span>
                 )}
               </div>
               <div className="vital-item">
-                <span className="label">Weight</span>
+                <span className="label">Weight (kg)</span>
                 {isEditingVitals ? (
-                  <input
-                    className="vital-input"
-                    type="text"
-                    value={vitals.weight}
-                    onChange={(event) => handleVitalsChange('weight', event.target.value)}
-                  />
+                  <input className="vital-input" type="number" value={profile.weightKg ?? ''} onChange={(e) => handleVitalsChange('weightKg', e.target.value)} />
                 ) : (
-                  <span className="value">{vitals.weight}</span>
+                  <span className="value">{profile.weightKg ?? '--'}</span>
                 )}
               </div>
-              <button className="btn btn-secondary w-full mt-4" onClick={handleVitalsButton}>
+              <button className="btn btn-secondary w-full mt-4" onClick={toggleEdit}>
                 {isEditingVitals ? 'Save Vitals' : 'Edit Vitals'}
               </button>
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="profile-main">
             <div className="goals-section glass-card">
               <div className="section-header">
                 <h3><Target size={20} className="text-accent" /> Active Goals</h3>
-                <button className="btn btn-secondary btn-sm">Add Goal</button>
               </div>
-              
+
               <div className="goals-list">
                 <div className="goal-card">
                   <div className="goal-info">
-                    <h4>Improve Posture (Reduce APT)</h4>
-                    <span className="goal-target">Target: 95% perfect form sessions</span>
-                  </div>
-                  <div className="goal-progress">
-                    <div className="progress-bar-bg">
-                      <div className="progress-bar-fill w-70"></div>
-                    </div>
-                    <span className="progress-text">70%</span>
-                  </div>
-                </div>
-
-                <div className="goal-card">
-                  <div className="goal-info">
-                    <h4>Increase Mobility</h4>
-                    <span className="goal-target">Target: 3 stretching sessions / week</span>
-                  </div>
-                  <div className="goal-progress">
-                    <div className="progress-bar-bg">
-                      <div className="progress-bar-fill w-30 bg-purple"></div>
-                    </div>
-                    <span className="progress-text">1/3</span>
+                    <h4>{profile.primaryFocus || 'Posture Correction'}</h4>
+                    <span className="goal-target">Intensity: {profile.intensityLevel || 'Beginner'}</span>
                   </div>
                 </div>
               </div>
@@ -127,7 +133,7 @@ const Profile = () => {
               <div className="pref-form">
                 <div className="form-group">
                   <label>Primary Focus</label>
-                  <select className="form-select">
+                  <select className="form-select" value={profile.primaryFocus || 'Posture Correction'} onChange={(e) => handleVitalsChange('primaryFocus', e.target.value)}>
                     <option>Posture Correction</option>
                     <option>Strength Training</option>
                     <option>Mobility & Flexibility</option>
@@ -136,17 +142,16 @@ const Profile = () => {
                 </div>
                 <div className="form-group">
                   <label>Intensity Level</label>
-                  <select className="form-select">
+                  <select className="form-select" value={profile.intensityLevel || 'Beginner'} onChange={(e) => handleVitalsChange('intensityLevel', e.target.value)}>
                     <option>Beginner</option>
                     <option>Intermediate</option>
                     <option>Advanced</option>
                   </select>
                 </div>
-                <button className="btn btn-primary mt-2">Save Preferences</button>
+                <button className="btn btn-primary mt-2" onClick={toggleEdit}>Save Preferences</button>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>

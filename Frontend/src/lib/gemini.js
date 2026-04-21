@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { apiFetch } from './api';
+
 const FALLBACK_MESSAGE = 'Unable to fetch response. Try basic exercises like stretching and posture correction';
 
 export const generateFitnessReply = async (inputOrPayload, maybeHealthData) => {
@@ -10,22 +11,13 @@ export const generateFitnessReply = async (inputOrPayload, maybeHealthData) => {
       return 'Please type your question so I can help with a short fitness plan.';
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/chat`, {
+    const data = await apiFetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
         userInput: queryText,
         healthData: contextData ?? {}
       })
     });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      return data?.error || data?.message || FALLBACK_MESSAGE;
-    }
 
     return data?.text || FALLBACK_MESSAGE;
   } catch (error) {
@@ -35,12 +27,7 @@ export const generateFitnessReply = async (inputOrPayload, maybeHealthData) => {
 
 export const fetchChatHistory = async (limit = 50) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/chat/history?limit=${limit}`);
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = await response.json();
+    const data = await apiFetch(`/api/chat/history?limit=${limit}`);
     return Array.isArray(data) ? data : [];
   } catch (error) {
     return [];
