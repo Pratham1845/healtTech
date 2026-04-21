@@ -1,7 +1,19 @@
+import { useState } from 'react';
 import { User, Target, Shield, Heart } from 'lucide-react';
 import './Profile.css';
 
 const Profile = () => {
+  const [isEditingVitals, setIsEditingVitals] = useState(false);
+  const [vitals, setVitals] = useState({ age: '28', height: '180 cm', weight: '75 kg' });
+
+  const handleVitalsChange = (field, value) => {
+    setVitals((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleVitalsButton = () => {
+    setIsEditingVitals((prev) => !prev);
+  };
+
   return (
     <div className="page-container profile-page">
       <div className="container">
@@ -28,17 +40,46 @@ const Profile = () => {
               <h3>Basic Vitals</h3>
               <div className="vital-item">
                 <span className="label">Age</span>
-                <span className="value">28</span>
+                {isEditingVitals ? (
+                  <input
+                    className="vital-input"
+                    type="text"
+                    value={vitals.age}
+                    onChange={(event) => handleVitalsChange('age', event.target.value)}
+                  />
+                ) : (
+                  <span className="value">{vitals.age}</span>
+                )}
               </div>
               <div className="vital-item">
                 <span className="label">Height</span>
-                <span className="value">180 cm</span>
+                {isEditingVitals ? (
+                  <input
+                    className="vital-input"
+                    type="text"
+                    value={vitals.height}
+                    onChange={(event) => handleVitalsChange('height', event.target.value)}
+                  />
+                ) : (
+                  <span className="value">{vitals.height}</span>
+                )}
               </div>
               <div className="vital-item">
                 <span className="label">Weight</span>
-                <span className="value">75 kg</span>
+                {isEditingVitals ? (
+                  <input
+                    className="vital-input"
+                    type="text"
+                    value={vitals.weight}
+                    onChange={(event) => handleVitalsChange('weight', event.target.value)}
+                  />
+                ) : (
+                  <span className="value">{vitals.weight}</span>
+                )}
               </div>
-              <button className="btn btn-secondary w-full mt-4">Edit Vitals</button>
+              <button className="btn btn-secondary w-full mt-4" onClick={handleVitalsButton}>
+                {isEditingVitals ? 'Save Vitals' : 'Edit Vitals'}
+              </button>
             </div>
           </div>
 

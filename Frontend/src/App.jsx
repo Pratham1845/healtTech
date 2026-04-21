@@ -14,7 +14,6 @@ import WorkoutCam from './pages/WorkoutCam';
 import ActivityStats from './pages/ActivityStats';
 import History from './pages/History';
 import Profile from './pages/Profile';
-import Settings from './pages/Settings';
 
 // Global Styles
 import './index.css';
@@ -109,18 +108,6 @@ function App() {
               <Navbar />
               <main className="main-content">
                 <Profile />
-              </main>
-              <Footer />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <Navbar />
-              <main className="main-content">
-                <Settings />
               </main>
               <Footer />
             </ProtectedRoute>

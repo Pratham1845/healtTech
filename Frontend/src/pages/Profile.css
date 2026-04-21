@@ -79,6 +79,22 @@
   font-weight: 600;
 }
 
+.vital-input {
+  width: 110px;
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: right;
+  color: var(--text-primary);
+  background: #ffffff;
+}
+
+.vital-input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+}
+
 /* Main Content */
 .goals-section, .health-preferences {
   padding: 2rem 2.5rem;

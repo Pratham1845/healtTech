@@ -416,32 +416,6 @@ const ActivityStats = () => {
               </div>
             </div>
 
-            {/* Calories Burned */}
-            <div className="chart-container glass-card">
-              <div className="chart-header">
-                <h3>Calories Burned</h3>
-                <span className="chart-value">{currentCalories.reduce((a, b) => a + b, 0).toLocaleString()} cal</span>
-              </div>
-              <div className="bar-chart">
-                {currentCalories.slice(0, timeFilter === '7d' ? 7 : 14).map((value, idx) => {
-                  const maxValue = Math.max(...currentCalories);
-                  const heightPercent = (value / maxValue) * 100;
-                  return (
-                    <div key={idx} className="bar-item">
-                      <div className="bar-wrapper">
-                        <div 
-                          className="bar-fill calories" 
-                          style={{ height: `${heightPercent}%` }}
-                        >
-                          <span className="bar-value">{value}</span>
-                        </div>
-                      </div>
-                      {timeFilter === '7d' && <span className="bar-label">{daysLabels[idx]}</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </div>
         </div>
       </div>

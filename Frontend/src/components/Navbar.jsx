@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, Menu, X, Settings, User, Scan, LogIn, LogOut } from 'lucide-react';
+import { Activity, Menu, X, User, Scan, LogIn, LogOut } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -68,9 +68,6 @@ const Navbar = () => {
               <Link to="/profile" className="nav-icon-btn" title="Profile">
                 <User size={20} />
               </Link>
-              <Link to="/settings" className="nav-icon-btn" title="Settings">
-                <Settings size={20} />
-              </Link>
               <Link to="/workout" className="btn btn-primary btn-sm">
                 <Scan size={16} />
                 Start Scan
@@ -113,9 +110,6 @@ const Navbar = () => {
             <>
               <Link to="/profile" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
                 <User size={18} /> Profile
-              </Link>
-              <Link to="/settings" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>
-                <Settings size={18} /> Settings
               </Link>
               <button className="mobile-nav-link" onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}>
                 <LogOut size={18} /> Logout
