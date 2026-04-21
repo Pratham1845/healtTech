@@ -128,6 +128,12 @@ const Login = () => {
           </form>
 
           <div className="login-simple-footer">
+            <div className="login-simple-switch">
+              <p>
+                Don't have an account?{' '}
+                <a href="/signup" className="signup-link-simple">Sign up</a>
+              </p>
+            </div>
             <div className="demo-info">
               <p><strong>Demo Account:</strong></p>
               <p>demo@zenith.com | demo123</p>

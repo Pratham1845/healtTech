@@ -407,6 +407,30 @@ input.error:focus {
   text-align: center;
 }
 
+.login-simple-switch {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.login-simple-switch p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.signup-link-simple {
+  color: var(--accent-cyan);
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.signup-link-simple:hover {
+  color: var(--accent-blue);
+  text-decoration: underline;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .login-split {

@@ -54,10 +54,36 @@
 .chat-history {
   flex-grow: 1;
   padding: 2rem;
-  overflow-y: auto;
+  overflow-y: hidden;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  transition: overflow-y var(--transition-fast);
+  position: relative;
+}
+
+.chat-history.chat-active {
+  overflow-y: auto;
+}
+
+.chat-history::after {
+  content: 'Click to scroll';
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--panel-bg);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  opacity: 0.7;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.chat-history.chat-active::after {
+  opacity: 0;
 }
 
 .message {

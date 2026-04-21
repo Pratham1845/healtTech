@@ -5,6 +5,7 @@ import Footer from './components/Footer';
 // Pages
 import Landing from './pages/Landing';
 import Login from './pages/LoginSimple';
+import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Chatbot from './pages/Chatbot';
 import WorkoutCam from './pages/WorkoutCam';
@@ -25,6 +26,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chatbot" element={<Chatbot />} />
           <Route path="/workout" element={<WorkoutCam />} />

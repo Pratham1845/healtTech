@@ -13,15 +13,26 @@ const Chatbot = () => {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isChatActive, setIsChatActive] = useState(false);
   const messagesEndRef = useRef(null);
+  const chatHistoryRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // No auto-scroll on load - let user control scrolling
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // Removed auto-scroll to prevent page jump on refresh
+  }, []);
+
+  const handleChatClick = () => {
+    setIsChatActive(true);
+  };
+
+  const handleChatMouseLeave = () => {
+    setIsChatActive(false);
+  };
 
   const quickPrompts = [
     "Improve squat form",
@@ -127,7 +138,11 @@ const Chatbot = () => {
               </div>
             </div>
 
-            <div className="chat-history">
+            <div 
+              className={`chat-history ${isChatActive ? 'chat-active' : ''}`}
+              onClick={handleChatClick}
+              onMouseLeave={handleChatMouseLeave}
+            >
               {messages.map((message) => (
                 <div key={message.id} className={`message ${message.type}`}>
                   {message.type === 'bot' && (
