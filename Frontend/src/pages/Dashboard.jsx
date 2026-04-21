@@ -55,52 +55,79 @@ const Dashboard = () => {
           <div className="chart-card glass-card">
             <div className="card-header">
               <h3>Weekly Activity</h3>
-              <TrendingUp size={20} className="text-accent" />
+              <span className="chart-subtitle">Total: 3.5 hours</span>
             </div>
-            <div className="bar-chart">
+            <div className="bar-chart-simple">
               {[
-                { day: 'Mon', height: 60 },
-                { day: 'Tue', height: 80 },
-                { day: 'Wed', height: 45 },
-                { day: 'Thu', height: 90 },
-                { day: 'Fri', height: 70 },
-                { day: 'Sat', height: 85 },
-                { day: 'Sun', height: 40 }
-              ].map((item, idx) => (
-                <div key={idx} className="bar-item">
-                  <div 
-                    className="bar-fill" 
-                    style={{ height: `${item.height}%` }}
-                  ></div>
-                  <span className="bar-label">{item.day}</span>
-                </div>
-              ))}
+                { day: 'Mon', minutes: 35 },
+                { day: 'Tue', minutes: 45 },
+                { day: 'Wed', minutes: 0 },
+                { day: 'Thu', minutes: 50 },
+                { day: 'Fri', minutes: 40 },
+                { day: 'Sat', minutes: 60 },
+                { day: 'Sun', minutes: 20 }
+              ].map((item, idx) => {
+                const maxMinutes = 60;
+                const heightPercent = (item.minutes / maxMinutes) * 100;
+                return (
+                  <div key={idx} className="bar-item-simple">
+                    <div className="bar-value-label">{item.minutes > 0 ? `${item.minutes}m` : ''}</div>
+                    <div className="bar-wrapper-simple">
+                      <div 
+                        className="bar-fill-simple" 
+                        style={{ height: `${heightPercent}%` }}
+                      ></div>
+                    </div>
+                    <span className="bar-label-simple">{item.day}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Mood Trend */}
+          {/* Mood Trend - Linear Format */}
           <div className="mood-card glass-card">
             <div className="card-header">
               <h3>Mood Trend</h3>
-              <Activity size={20} className="text-accent" />
+              <span className="chart-subtitle">This Week</span>
             </div>
-            <div className="wave-chart">
-              <svg viewBox="0 0 200 60" preserveAspectRatio="none">
+            <div className="mood-linear-chart">
+              <div className="mood-data-points">
+                {[
+                  { day: 'Mon', mood: 75 },
+                  { day: 'Tue', mood: 82 },
+                  { day: 'Wed', mood: 68 },
+                  { day: 'Thu', mood: 85 },
+                  { day: 'Fri', mood: 78 },
+                  { day: 'Sat', mood: 90 },
+                  { day: 'Sun', mood: 88 }
+                ].map((item, idx) => (
+                  <div key={idx} className="mood-point">
+                    <div className="mood-circle" style={{ 
+                      bottom: `${item.mood}%`,
+                      background: item.mood >= 80 ? 'var(--accent-success)' : 
+                                  item.mood >= 70 ? 'var(--accent-cyan)' : 'var(--accent-warning)'
+                    }}>
+                      <span>{item.mood}</span>
+                    </div>
+                    <span className="mood-day-label">{item.day}</span>
+                  </div>
+                ))}
+              </div>
+              <svg className="mood-line-svg" viewBox="0 0 300 150" preserveAspectRatio="none">
                 <defs>
-                  <linearGradient id="moodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="var(--accent-purple)" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="var(--accent-purple)" stopOpacity="0" />
+                  <linearGradient id="moodLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="var(--accent-cyan)" />
+                    <stop offset="100%" stopColor="var(--accent-success)" />
                   </linearGradient>
                 </defs>
                 <path 
-                  d="M0,30 Q25,10 50,25 T100,20 T150,35 T200,25 L200,60 L0,60 Z" 
-                  fill="url(#moodGradient)" 
-                />
-                <path 
-                  d="M0,30 Q25,10 50,25 T100,20 T150,35 T200,25" 
+                  d="M21,22 L64,13 L107,28 L150,10 L193,17 L236,5 L279,8" 
                   fill="none" 
-                  stroke="var(--accent-purple)" 
-                  strokeWidth="2"
+                  stroke="url(#moodLineGradient)" 
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </svg>
             </div>

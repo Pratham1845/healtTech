@@ -340,6 +340,73 @@ input.error:focus {
   margin: 0.25rem 0;
 }
 
+/* Simple Login Page Styles */
+.login-page-simple {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: var(--bg-primary);
+}
+
+.login-simple-container {
+  width: 100%;
+  max-width: 450px;
+}
+
+.login-simple-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 3rem;
+  box-shadow: var(--panel-shadow);
+}
+
+.login-simple-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.login-logo svg {
+  color: var(--accent-cyan);
+}
+
+.login-logo h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+.login-simple-header p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.login-simple-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.login-simple-footer {
+  margin-top: 2rem;
+  text-align: center;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .login-split {

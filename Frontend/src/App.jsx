@@ -4,7 +4,7 @@ import Footer from './components/Footer';
 
 // Pages
 import Landing from './pages/Landing';
-import Login from './pages/Login';
+import Login from './pages/LoginSimple';
 import Dashboard from './pages/Dashboard';
 import Chatbot from './pages/Chatbot';
 import WorkoutCam from './pages/WorkoutCam';
