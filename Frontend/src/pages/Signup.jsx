@@ -68,7 +68,7 @@ const Signup = () => {
       setIsLoading(false);
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('userName', formData.name);
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }, 1000);
   };
 

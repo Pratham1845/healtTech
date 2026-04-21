@@ -56,7 +56,7 @@ const Login = () => {
     setTimeout(() => {
       setIsLoading(false);
       localStorage.setItem('isLoggedIn', 'true');
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }, 1000);
   };
 

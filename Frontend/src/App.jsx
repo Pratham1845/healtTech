@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages
 import Landing from './pages/Landing';
@@ -22,23 +23,110 @@ import './components/Sections.css';
 function App() {
   return (
     <div className="app-container">
-      <Navbar />
-      <main className="main-content">
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/chatbot" element={<Chatbot />} />
-          <Route path="/emotions" element={<EmotionDetection />} />
-          <Route path="/workout" element={<WorkoutCam />} />
-          <Route path="/stats" element={<ActivityStats />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
-      </main>
-      <Footer />
+      <Routes>
+        {/* Public Routes - No Navbar */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        
+        {/* Protected Routes - With Navbar */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="main-content">
+                <Dashboard />
+              </main>
+              <Footer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chatbot"
+          element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="main-content">
+                <Chatbot />
+              </main>
+              <Footer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/emotions"
+          element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="main-content">
+                <EmotionDetection />
+              </main>
+              <Footer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/workout"
+          element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="main-content">
+                <WorkoutCam />
+              </main>
+              <Footer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stats"
+          element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="main-content">
+                <ActivityStats />
+              </main>
+              <Footer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="main-content">
+                <History />
+              </main>
+              <Footer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="main-content">
+                <Profile />
+              </main>
+              <Footer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="main-content">
+                <Settings />
+              </main>
+              <Footer />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
     </div>
   );
 }

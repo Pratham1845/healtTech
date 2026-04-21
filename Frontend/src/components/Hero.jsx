@@ -27,12 +27,12 @@ const Hero = () => {
           </p>
           
           <div className="hero-cta-group">
-            <Link to="/workout" className="btn btn-primary btn-lg">
-              Start Free Scan
+            <Link to="/signup" className="btn btn-primary btn-lg">
+              Get Started Free
               <ArrowRight size={18} />
             </Link>
-            <Link to="/dashboard" className="btn btn-secondary btn-lg">
-              View Dashboard
+            <Link to="/login" className="btn btn-secondary btn-lg">
+              Sign In
             </Link>
           </div>
           
