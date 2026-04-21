@@ -82,6 +82,7 @@ const EmotionDetection = () => {
   const sessionStartRef = useRef(0);
   const pauseStartRef = useRef(0);
   const pausedMsRef = useRef(0);
+  const isPausedRef = useRef(false);
   const isProcessingRef = useRef(false);
 
   const clearDetectionInterval = useCallback(() => {
@@ -135,7 +136,7 @@ const EmotionDetection = () => {
   }, []);
 
   const analyzeFrame = useCallback(async () => {
-    if (isProcessingRef.current || isPaused) {
+    if (isProcessingRef.current || isPausedRef.current) {
       return;
     }
 
@@ -193,7 +194,7 @@ const EmotionDetection = () => {
     } finally {
       isProcessingRef.current = false;
     }
-  }, [isPaused]);
+  }, []);
 
   const startDetectionLoop = useCallback(() => {
     clearDetectionInterval();
@@ -279,6 +280,7 @@ const EmotionDetection = () => {
       pausedMsRef.current += Date.now() - pauseStartRef.current;
       pauseStartRef.current = 0;
       setIsPaused(false);
+      isPausedRef.current = false;
       setStatusText('Live detection running');
       startDetectionLoop();
       return;
@@ -286,6 +288,7 @@ const EmotionDetection = () => {
 
     pauseStartRef.current = Date.now();
     setIsPaused(true);
+    isPausedRef.current = true;
     setStatusText('Session paused');
     clearDetectionInterval();
   }, [clearDetectionInterval, isCameraOn, isPaused, startDetectionLoop]);
@@ -351,6 +354,10 @@ const EmotionDetection = () => {
     updateSessionTime();
   }, [isPaused, updateSessionTime]);
 
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
   return (
     <div className="page-container emotion-page">
       <div className="container">
@@ -403,7 +410,7 @@ const EmotionDetection = () => {
               {!isCameraOn ? (
                 <button className="btn btn-primary btn-lg" onClick={startCamera} disabled={!isModelReady}>
                   <Camera size={20} />
-                  Camera On
+                  Start
                 </button>
               ) : (
                 <button className="btn btn-secondary btn-lg" onClick={stopCamera}>
@@ -412,9 +419,14 @@ const EmotionDetection = () => {
                 </button>
               )}
 
-              <button className="btn btn-secondary btn-lg" onClick={togglePauseSession} disabled={!isCameraOn}>
-                {isPaused ? <PlayCircle size={20} /> : <PauseCircle size={20} />}
-                {isPaused ? 'Resume Session' : 'Pause Session'}
+              <button className="btn btn-secondary btn-lg" onClick={togglePauseSession} disabled={!isCameraOn || isPaused}>
+                <PauseCircle size={20} />
+                Pause
+              </button>
+
+              <button className="btn btn-secondary btn-lg" onClick={togglePauseSession} disabled={!isCameraOn || !isPaused}>
+                <PlayCircle size={20} />
+                Play
               </button>
 
               <button className="btn btn-danger btn-lg" onClick={endSession}>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Squat">
+  <circle cx="32" cy="10" r="6" fill="#10B981"/>
+  <path d="M22 24l10-8 10 8" stroke="#10B981" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M24 28h16" stroke="#059669" stroke-width="4" stroke-linecap="round"/>
+  <path d="M24 28l-8 10" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+  <path d="M40 28l8 10" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+  <path d="M24 36l8 10" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+  <path d="M40 36l-8 10" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+  <path d="M22 46h20" stroke="#065F46" stroke-width="4" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Push-Up">
+  <circle cx="14" cy="24" r="5" fill="#10B981"/>
+  <path d="M20 24h22" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+  <path d="M42 24l10 10" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+  <path d="M26 24l-8 14" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+  <path d="M36 24l-6 14" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+  <path d="M12 40h42" stroke="#065F46" stroke-width="4" stroke-linecap="round"/>
+</svg>

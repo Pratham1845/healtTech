@@ -9,6 +9,10 @@ import {
 } from 'lucide-react';
 import './WorkoutCam.css';
 
+const squatImage = '/assets/squads.jpeg';
+const pushupImage = '/assets/pushups.jpeg';
+const jumpingJackImage = '/assets/jumpingjags.jpeg';
+
 const MEDIAPIPE_SCRIPTS = [
   'https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js',
   'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js',
@@ -881,53 +885,93 @@ const WorkoutCam = () => {
         {error && <div className="workout-error">{error}</div>}
 
         <div className="workout-layout split-layout">
-          <div className="webcam-frame glass-card">
-            <div className="webcam-header">
-              <div className={`recording-dot ${isCameraOn && !isPaused ? 'pulse' : ''}`}></div>
-              <span>{statusText}</span>
+          <div className="workout-camera-column">
+            <div className="webcam-frame glass-card">
+              <div className="webcam-header">
+                <div className={`recording-dot ${isCameraOn && !isPaused ? 'pulse' : ''}`}></div>
+                <span>{statusText}</span>
+              </div>
+
+              <div className="webcam-view">
+                <video ref={videoRef} className="input-video" playsInline muted />
+                <canvas ref={canvasRef} className="output-canvas" width={640} height={480} />
+
+                {!isCameraOn && (
+                  <div className="camera-overlay">
+                    <Camera size={46} />
+                    <p>Camera is off</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="workout-control-row">
+                {!isCameraOn ? (
+                  <button className="btn btn-primary" onClick={startCamera} disabled={!scriptsReady}>
+                    <Camera size={18} /> Camera On
+                  </button>
+                ) : (
+                  <button className="btn btn-danger" onClick={stopCamera}>
+                    <StopCircle size={18} /> Camera Off
+                  </button>
+                )}
+
+                <button className="btn btn-secondary" onClick={resetWorkoutState}>
+                  <RefreshCw size={18} /> Reset Stats
+                </button>
+              </div>
             </div>
 
-            <div className="webcam-view">
-              <video ref={videoRef} className="input-video" playsInline muted />
-              <canvas ref={canvasRef} className="output-canvas" width={640} height={480} />
-
-              {!isCameraOn && (
-                <div className="camera-overlay">
-                  <Camera size={46} />
-                  <p>Camera is off</p>
-                </div>
-              )}
-            </div>
-
-            <div className="workout-control-row">
-              {!isCameraOn ? (
-                <button className="btn btn-primary" onClick={startCamera} disabled={!scriptsReady}>
-                  <Camera size={18} /> Camera On
+            <div className="live-feed glass-card">
+              <div className="feed-header">
+                <h4>AI Event Log</h4>
+                <button className="btn-icon" onClick={clearEventLog}>
+                  <RefreshCw size={14} />
                 </button>
-              ) : (
-                <button className="btn btn-secondary" onClick={stopCamera}>
-                  <StopCircle size={18} /> Camera Off
-                </button>
-              )}
-
-              <button className="btn btn-secondary" onClick={resetWorkoutState}>
-                <RefreshCw size={18} /> Reset Stats
-              </button>
+              </div>
+              <ul className="log-list">
+                {eventLog.length === 0 ? (
+                  <li className="log-item info">
+                    <Activity size={16} /> <span>No events yet. Start camera to begin.</span>
+                  </li>
+                ) : (
+                  eventLog.map((item, index) => (
+                    <li key={`${item.time}-${index}`} className={`log-item ${item.type}`}>
+                      <Activity size={16} />
+                      <span>{item.message}</span>
+                      <small>{item.time}</small>
+                    </li>
+                  ))
+                )}
+              </ul>
             </div>
           </div>
 
           <div className="workout-metrics">
-            <div className="metric-box glass-card full-width">
+            <div className="exercise-selector-box glass-card full-width">
               <span className="box-label">Current Exercise</span>
-              <select
-                value={currentExercise}
-                className="exercise-select"
-                onChange={(event) => setCurrentExercise(event.target.value)}
-              >
-                <option value="squat">Squat</option>
-                <option value="pushup">Push-Up</option>
-                <option value="jumpingJack">Jumping Jack</option>
-              </select>
+              <div className="exercise-buttons">
+                <button
+                  className={`exercise-btn ${currentExercise === 'squat' ? 'active' : ''}`}
+                  onClick={() => setCurrentExercise('squat')}
+                >
+                  <img className="exercise-icon-image" src={squatImage} alt="Squat" />
+                  <span>Squat</span>
+                </button>
+                <button
+                  className={`exercise-btn ${currentExercise === 'pushup' ? 'active' : ''}`}
+                  onClick={() => setCurrentExercise('pushup')}
+                >
+                  <img className="exercise-icon-image" src={pushupImage} alt="Push-Up" />
+                  <span>Push-Up</span>
+                </button>
+                <button
+                  className={`exercise-btn ${currentExercise === 'jumpingJack' ? 'active' : ''}`}
+                  onClick={() => setCurrentExercise('jumpingJack')}
+                >
+                  <img className="exercise-icon-image" src={jumpingJackImage} alt="Jumping Jack" />
+                  <span>Jumping Jack</span>
+                </button>
+              </div>
             </div>
 
             <div className="metrics-grid">
@@ -959,7 +1003,7 @@ const WorkoutCam = () => {
 
             <div className="live-feed glass-card">
               <div className="feed-header">
-                <h4>Form Feedback</h4>
+                <h4>Real-time Form Analysis</h4>
               </div>
               <p className="feedback-text">{feedbackText}</p>
               <p className="metric-text">{metricText}</p>
@@ -979,29 +1023,6 @@ const WorkoutCam = () => {
               </ul>
             </div>
 
-            <div className="live-feed glass-card">
-              <div className="feed-header">
-                <h4>AI Event Log</h4>
-                <button className="btn-icon" onClick={clearEventLog}>
-                  <RefreshCw size={14} />
-                </button>
-              </div>
-              <ul className="log-list">
-                {eventLog.length === 0 ? (
-                  <li className="log-item info">
-                    <Activity size={16} /> <span>No events yet. Start camera to begin.</span>
-                  </li>
-                ) : (
-                  eventLog.map((item, index) => (
-                    <li key={`${item.time}-${index}`} className={`log-item ${item.type}`}>
-                      <Activity size={16} />
-                      <span>{item.message}</span>
-                      <small>{item.time}</small>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
           </div>
         </div>
       </div>
