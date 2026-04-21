@@ -1,9 +1,19 @@
-import { useState } from 'react';
-import { BarChart3, TrendingUp, Activity, Target, Calendar, ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BarChart3, TrendingUp, Activity, Target, Calendar, ChevronDown, Moon, Plus, Save } from 'lucide-react';
 import './ActivityStats.css';
 
 const ActivityStats = () => {
   const [timeFilter, setTimeFilter] = useState('7d');
+  const [sleepScores, setSleepScores] = useState(() => {
+    const saved = localStorage.getItem('sleepScores');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showSleepInput, setShowSleepInput] = useState(false);
+  const [newSleepScore, setNewSleepScore] = useState({
+    date: new Date().toISOString().split('T')[0],
+    hours: '',
+    quality: ''
+  });
 
   const dummyData = {
     totalWorkouts: 42,
@@ -44,6 +54,35 @@ const ActivityStats = () => {
   const currentHealth = dummyData.healthScoreTrend[timeFilter];
   const currentCalories = dummyData.caloriesTrend[timeFilter];
   const daysLabels = getDaysLabels(timeFilter);
+
+  // Save sleep scores to localStorage
+  useEffect(() => {
+    localStorage.setItem('sleepScores', JSON.stringify(sleepScores));
+  }, [sleepScores]);
+
+  const handleSleepScoreSubmit = (e) => {
+    e.preventDefault();
+    if (!newSleepScore.hours || !newSleepScore.quality) return;
+
+    const calculatedScore = Math.round(
+      (parseFloat(newSleepScore.hours) / 8) * 50 + 
+      (parseInt(newSleepScore.quality) / 10) * 50
+    );
+
+    const scoreEntry = {
+      ...newSleepScore,
+      score: Math.min(100, Math.max(0, calculatedScore)),
+      id: Date.now()
+    };
+
+    setSleepScores(prev => [scoreEntry, ...prev].slice(0, 30)); // Keep last 30 entries
+    setNewSleepScore({
+      date: new Date().toISOString().split('T')[0],
+      hours: '',
+      quality: ''
+    });
+    setShowSleepInput(false);
+  };
 
   // Helper to create SVG path from data
   const createLinePath = (data, width = 600, height = 200) => {
@@ -132,6 +171,119 @@ const ActivityStats = () => {
                 <span className="trend positive">+8% this month</span>
               </div>
             </div>
+          </div>
+
+          {/* Sleep Score Section */}
+          <div className="sleep-score-section glass-card">
+            <div className="sleep-score-header">
+              <div>
+                <h3><Moon size={24} /> Sleep Score Tracker</h3>
+                <p>Track your sleep patterns and quality</p>
+              </div>
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={() => setShowSleepInput(!showSleepInput)}
+              >
+                <Plus size={16} />
+                {showSleepInput ? 'Cancel' : 'Add Entry'}
+              </button>
+            </div>
+
+            {showSleepInput && (
+              <form onSubmit={handleSleepScoreSubmit} className="sleep-input-form">
+                <div className="sleep-input-group">
+                  <label>Date</label>
+                  <input 
+                    type="date" 
+                    value={newSleepScore.date}
+                    onChange={(e) => setNewSleepScore({...newSleepScore, date: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="sleep-input-group">
+                  <label>Hours Slept</label>
+                  <input 
+                    type="number" 
+                    step="0.5"
+                    min="0"
+                    max="24"
+                    placeholder="7.5"
+                    value={newSleepScore.hours}
+                    onChange={(e) => setNewSleepScore({...newSleepScore, hours: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="sleep-input-group">
+                  <label>Sleep Quality (1-10)</label>
+                  <input 
+                    type="number" 
+                    min="1"
+                    max="10"
+                    placeholder="8"
+                    value={newSleepScore.quality}
+                    onChange={(e) => setNewSleepScore({...newSleepScore, quality: e.target.value})}
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  <Save size={16} />
+                  Save Sleep Score
+                </button>
+              </form>
+            )}
+
+            {sleepScores.length > 0 && (
+              <div className="sleep-scores-list">
+                <div className="sleep-stats">
+                  <div className="sleep-stat-item">
+                    <span className="sleep-stat-label">Average Score</span>
+                    <span className="sleep-stat-value">
+                      {Math.round(sleepScores.reduce((sum, s) => sum + s.score, 0) / sleepScores.length)}
+                    </span>
+                  </div>
+                  <div className="sleep-stat-item">
+                    <span className="sleep-stat-label">Avg Hours</span>
+                    <span className="sleep-stat-value">
+                      {(sleepScores.reduce((sum, s) => sum + parseFloat(s.hours), 0) / sleepScores.length).toFixed(1)}h
+                    </span>
+                  </div>
+                  <div className="sleep-stat-item">
+                    <span className="sleep-stat-label">Total Entries</span>
+                    <span className="sleep-stat-value">{sleepScores.length}</span>
+                  </div>
+                </div>
+                <div className="sleep-entries">
+                  {sleepScores.slice(0, 7).map((entry) => (
+                    <div key={entry.id} className="sleep-entry-item">
+                      <div className="sleep-entry-date">
+                        <span>{new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                      </div>
+                      <div className="sleep-entry-details">
+                        <span>{entry.hours}h</span>
+                        <div className="sleep-score-bar">
+                          <div 
+                            className="sleep-score-fill"
+                            style={{ 
+                              width: `${entry.score}%`,
+                              backgroundColor: entry.score >= 80 ? 'var(--accent-success)' : 
+                                               entry.score >= 60 ? 'var(--accent-cyan)' : 'var(--accent-warning)'
+                            }}
+                          ></div>
+                        </div>
+                        <span className="sleep-score-value">{entry.score}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {sleepScores.length === 0 && !showSleepInput && (
+              <div className="sleep-empty-state">
+                <Moon size={48} />
+                <p>No sleep data yet. Add your first entry to start tracking!</p>
+              </div>
+            )}
           </div>
 
           {/* Large Charts */}

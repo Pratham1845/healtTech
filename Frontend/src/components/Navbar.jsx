@@ -33,6 +33,7 @@ const Navbar = () => {
   const navLinks = [
     { name: 'Dashboard', href: '/dashboard' },
     { name: 'Workout', href: '/workout' },
+    { name: 'Emotions', href: '/emotions' },
     { name: 'Chatbot', href: '/chatbot' },
     { name: 'Analytics', href: '/stats' },
     { name: 'History', href: '/history' }

@@ -8,6 +8,192 @@
   gap: 2rem;
 }
 
+/* Sleep Score Section */
+.sleep-score-section {
+  padding: 2rem;
+}
+
+.sleep-score-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.sleep-score-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.sleep-score-header p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.sleep-input-form {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.sleep-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sleep-input-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sleep-input-group input {
+  padding: 0.75rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: var(--panel-bg);
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.sleep-input-group input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.sleep-input-form .btn {
+  grid-column: span 3;
+  justify-content: center;
+}
+
+.sleep-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.sleep-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.sleep-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.sleep-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+.sleep-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sleep-entry-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  transition: all var(--transition-fast);
+}
+
+.sleep-entry-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sleep-entry-date {
+  min-width: 60px;
+}
+
+.sleep-entry-date span {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.sleep-entry-details {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.sleep-entry-details > span:first-child {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  min-width: 40px;
+}
+
+.sleep-score-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--panel-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sleep-score-fill {
+  height: 100%;
+  transition: width var(--transition-normal);
+  border-radius: 4px;
+}
+
+.sleep-score-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 35px;
+  text-align: right;
+}
+
+.sleep-empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+}
+
+.sleep-empty-state svg {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.sleep-empty-state p {
+  font-size: 1rem;
+}
+
 .stats-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

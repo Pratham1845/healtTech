@@ -8,6 +8,7 @@ import Login from './pages/LoginSimple';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Chatbot from './pages/Chatbot';
+import EmotionDetection from './pages/EmotionDetection';
 import WorkoutCam from './pages/WorkoutCam';
 import ActivityStats from './pages/ActivityStats';
 import History from './pages/History';
@@ -29,6 +30,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chatbot" element={<Chatbot />} />
+          <Route path="/emotions" element={<EmotionDetection />} />
           <Route path="/workout" element={<WorkoutCam />} />
           <Route path="/stats" element={<ActivityStats />} />
           <Route path="/history" element={<History />} />
