@@ -1,14 +1,19 @@
-import { Calendar, Clock, Activity, Filter } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Calendar, Activity, Filter } from 'lucide-react';
+import { fetchChatHistory } from '../lib/gemini';
 import './History.css';
 
 const History = () => {
-  const sessions = [
-    { id: 1, date: 'Today, 8:00 AM', type: 'Full Body HIIT', duration: '45 min', score: 92 },
-    { id: 2, date: 'Yesterday, 6:30 PM', type: 'Mobility & Stretching', duration: '20 min', score: 98 },
-    { id: 3, date: 'Oct 12, 7:15 AM', type: 'Lower Body Strength', duration: '55 min', score: 85 },
-    { id: 4, date: 'Oct 10, 5:00 PM', type: 'Yoga Flow', duration: '30 min', score: 95 },
-    { id: 5, date: 'Oct 8, 8:00 AM', type: 'Upper Body Strength', duration: '40 min', score: 88 },
-  ];
+  const [sessions, setSessions] = useState([]);
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      const history = await fetchChatHistory(100);
+      setSessions(history);
+    };
+
+    loadHistory();
+  }, []);
 
   return (
     <div className="page-container history-page">
@@ -16,38 +21,50 @@ const History = () => {
         <div className="page-header flex-between">
           <div>
             <h1>Session <span className="text-gradient">History</span></h1>
-            <p>Review your past workouts and AI feedback.</p>
+            <p>Live chat and coaching logs from backend storage.</p>
           </div>
-          <button className="btn btn-secondary"><Filter size={18} /> Filter</button>
+          <button className="btn btn-secondary"><Filter size={18} /> Live</button>
         </div>
 
         <div className="history-list">
-          {sessions.map((session) => (
-            <div key={session.id} className="history-card glass-card">
+          {sessions.length === 0 ? (
+            <div className="history-card glass-card">
               <div className="history-info">
                 <div className="history-icon">
                   <Activity size={24} className="text-accent" />
                 </div>
                 <div>
-                  <h3>{session.type}</h3>
+                  <h3>No history yet</h3>
                   <div className="history-meta">
-                    <span><Calendar size={14} /> {session.date}</span>
-                    <span><Clock size={14} /> {session.duration}</span>
+                    <span>Start chatting to see live stored data here.</span>
                   </div>
                 </div>
               </div>
-              <div className="history-score">
-                <span className="score-label">Form Score</span>
-                <span className={`score-badge ${session.score >= 90 ? 'excellent' : 'good'}`}>
-                  {session.score}%
-                </span>
-              </div>
             </div>
-          ))}
-        </div>
-        
-        <div className="load-more">
-          <button className="btn btn-secondary">Load Previous Sessions</button>
+          ) : (
+            sessions.map((session) => (
+              <div key={session._id} className="history-card glass-card">
+                <div className="history-info">
+                  <div className="history-icon">
+                    <Activity size={24} className="text-accent" />
+                  </div>
+                  <div>
+                    <h3>{session.userInput}</h3>
+                    <div className="history-meta">
+                      <span><Calendar size={14} /> {new Date(session.createdAt).toLocaleString()}</span>
+                    </div>
+                    <p className="history-preview">{session.botReply}</p>
+                  </div>
+                </div>
+                <div className="history-score">
+                  <span className="score-label">Posture</span>
+                  <span className={`score-badge ${(session.healthData?.postureScore ?? 0) >= 90 ? 'excellent' : 'good'}`}>
+                    {session.healthData?.postureScore ?? '--'}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

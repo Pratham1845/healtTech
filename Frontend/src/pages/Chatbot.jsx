@@ -1,29 +1,63 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Send, Bot, User, Sparkles } from 'lucide-react';
+import { fetchChatHistory, generateFitnessReply } from '../lib/gemini';
 import './Chatbot.css';
 
+const USER_HEALTH_DATA = {
+  postureScore: 65,
+  activityLevel: 'Low',
+  mood: 'Neutral'
+};
+
+const FALLBACK_MESSAGE = 'Unable to fetch response. Try basic exercises like stretching and posture correction';
+
 const Chatbot = () => {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      type: 'bot',
-      text: "Hello! I'm your Zenith Health AI Coach. I noticed your lower back exertion was slightly higher than normal yesterday. Would you like a 5-minute recovery stretch routine today?",
-      timestamp: new Date().toISOString()
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isChatActive, setIsChatActive] = useState(false);
   const messagesEndRef = useRef(null);
-  const chatHistoryRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // No auto-scroll on load - let user control scrolling
   useEffect(() => {
-    // Removed auto-scroll to prevent page jump on refresh
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      const history = await fetchChatHistory(50);
+
+      if (!history.length) {
+        setMessages([
+          {
+            id: `welcome-${Date.now()}`,
+            sender: 'bot',
+            text: "Hello! I'm your Zenith Health AI Coach. Ask me anything about your training and recovery.",
+            timestamp: new Date().toISOString()
+          }
+        ]);
+        return;
+      }
+
+      const orderedHistory = [...history].reverse();
+      const hydratedMessages = orderedHistory.flatMap((item) => [
+        {
+          id: `user-${item._id}`,
+          sender: 'user',
+          text: item.userInput,
+          timestamp: item.createdAt
+        },
+        {
+          id: `bot-${item._id}`,
+          sender: 'bot',
+          text: item.botReply,
+          timestamp: item.createdAt
+        }
+      ]);
+
+      setMessages(hydratedMessages);
+    };
+
+    loadHistory();
   }, []);
 
   const handleChatClick = () => {
@@ -41,53 +75,41 @@ const Chatbot = () => {
     "Build weekly plan"
   ];
 
-  const botResponses = {
-    "improve squat form": "Great question! Here are key tips for better squat form:\n\n1. Keep your feet shoulder-width apart\n2. Push your knees out as you descend\n3. Keep your chest up and core engaged\n4. Go down until thighs are parallel to ground\n5. Drive through your heels on the way up\n\nWould you like me to start the camera to analyze your form?",
-    "i feel tired today": "I understand. Based on your recent activity data:\n\n• You've had 3 intense workouts this week\n• Sleep quality was 72% last night\n• Recovery score is moderate\n\nRecommendations:\n- Light stretching or yoga today\n- Focus on hydration (aim for 3L)\n- Early bedtime tonight\n\nShould I create a light recovery session for you?",
-    "reduce stress": "Here's a personalized stress reduction plan:\n\n🧘 Immediate (5 min):\n- Box breathing: 4-4-4-4 pattern\n- Neck and shoulder rolls\n\n🌿 Today (15 min):\n- Guided meditation session\n- Light walk outdoors\n\n📅 This Week:\n- 2 yoga sessions\n- Digital detox 1hr before bed\n- Consistent sleep schedule\n\nYour stress markers show improvement potential. Want to start?",
-    "build weekly plan": "Based on your goals and recent progress, here's your optimized week:\n\n📋 Monday: Lower Body Strength (45 min)\n📋 Tuesday: Yoga & Mobility (30 min)\n📋 Wednesday: Upper Body (40 min)\n📋 Thursday: Active Recovery (20 min)\n📋 Friday: Full Body HIIT (35 min)\n📋 Saturday: Cardio + Core (30 min)\n📋 Sunday: Rest & Stretching\n\n💡 Notes:\n- Increased recovery time between sessions\n- Added mobility work for your hip flexors\n\nShall I lock this in?",
-    "default": "That's a great question! Based on your health data and goals, I'd recommend focusing on consistency this week. Would you like me to:\n\n1. Analyze your recent workout patterns\n2. Suggest personalized exercises\n3. Review your nutrition timing\n4. Create a recovery plan\n\nJust let me know what you'd prefer!"
-  };
-
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
-
-    const userMessage = {
-      id: messages.length + 1,
-      type: 'user',
-      text: inputValue,
-      timestamp: new Date().toISOString()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
-    setIsTyping(true);
-
-    // Simulate bot response
-    setTimeout(() => {
-      const lowerInput = inputValue.toLowerCase();
-      let responseText = botResponses.default;
-
-      for (const [key, response] of Object.entries(botResponses)) {
-        if (lowerInput.includes(key)) {
-          responseText = response;
-          break;
-        }
-      }
-
-      const botMessage = {
-        id: messages.length + 2,
-        type: 'bot',
-        text: responseText,
+  const appendMessage = (sender, text) => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `${sender}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        sender,
+        text,
         timestamp: new Date().toISOString()
-      };
-
-      setMessages(prev => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 1000 + Math.random() * 1000);
+      }
+    ]);
   };
 
-  const handleKeyPress = (e) => {
+  const handleSend = async (overrideText) => {
+    const trimmedText = (overrideText ?? inputValue).trim();
+    if (!trimmedText || loading) return;
+
+    appendMessage('user', trimmedText);
+    setInputValue('');
+    setLoading(true);
+
+    try {
+      const botReply = await generateFitnessReply({
+        userInput: trimmedText,
+        healthData: USER_HEALTH_DATA
+      });
+
+      appendMessage('bot', botReply || FALLBACK_MESSAGE);
+    } catch (error) {
+      appendMessage('bot', FALLBACK_MESSAGE);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -96,29 +118,7 @@ const Chatbot = () => {
 
   const handleQuickPrompt = (prompt) => {
     setInputValue(prompt);
-    setTimeout(() => {
-      const userMessage = {
-        id: messages.length + 1,
-        type: 'user',
-        text: prompt,
-        timestamp: new Date().toISOString()
-      };
-
-      setMessages(prev => [...prev, userMessage]);
-      setIsTyping(true);
-
-      setTimeout(() => {
-        const responseText = botResponses[prompt.toLowerCase()] || botResponses.default;
-        const botMessage = {
-          id: messages.length + 2,
-          type: 'bot',
-          text: responseText,
-          timestamp: new Date().toISOString()
-        };
-        setMessages(prev => [...prev, botMessage]);
-        setIsTyping(false);
-      }, 1000 + Math.random() * 1000);
-    }, 100);
+    handleSend(prompt);
   };
 
   return (
@@ -144,8 +144,8 @@ const Chatbot = () => {
               onMouseLeave={handleChatMouseLeave}
             >
               {messages.map((message) => (
-                <div key={message.id} className={`message ${message.type}`}>
-                  {message.type === 'bot' && (
+                <div key={message.id} className={`message ${message.sender}`}>
+                  {message.sender === 'bot' && (
                     <div className="msg-avatar"><Bot size={18} /></div>
                   )}
                   <div className="msg-bubble">
@@ -153,12 +153,12 @@ const Chatbot = () => {
                       <p key={idx} style={{ marginBottom: line === '' ? '0.5rem' : '0.25rem' }}>{line}</p>
                     ))}
                   </div>
-                  {message.type === 'user' && (
+                  {message.sender === 'user' && (
                     <div className="msg-avatar"><User size={18} /></div>
                   )}
                 </div>
               ))}
-              {isTyping && (
+              {loading && (
                 <div className="message bot">
                   <div className="msg-avatar"><Bot size={18} /></div>
                   <div className="msg-bubble typing-indicator">
@@ -185,13 +185,15 @@ const Chatbot = () => {
               </div>
               <div className="input-box">
                 <input 
+                  id="chatbot-input"
+                  name="chatbotInput"
                   type="text" 
                   placeholder="Ask your AI coach anything..." 
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyDown}
                 />
-                <button className="btn-send" onClick={handleSend}>
+                <button className="btn-send" onClick={() => handleSend()} disabled={loading}>
                   <Send size={18} />
                 </button>
               </div>

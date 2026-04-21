@@ -58,6 +58,13 @@
   gap: 0.4rem;
 }
 
+.history-preview {
+  margin-top: 0.6rem;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  max-width: 60ch;
+}
+
 .history-score {
   display: flex;
   flex-direction: column;
