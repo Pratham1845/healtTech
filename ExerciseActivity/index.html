@@ -1,0 +1,958 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HealthTech Multi-Exercise Fitness Engine</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+  <style>
+    :root {
+      --bg1: #0a1a1f;
+      --bg2: #132b34;
+      --panel: rgba(5, 18, 24, 0.72);
+      --line: #28556a;
+      --text: #ebf7ff;
+      --muted: #9db8c6;
+      --ok: #63f2b2;
+      --warn: #ffc266;
+      --bad: #ff7272;
+      --accent: #58c8ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background:
+        radial-gradient(circle at 15% 10%, #244556 0%, transparent 42%),
+        radial-gradient(circle at 86% 16%, #2f3046 0%, transparent 38%),
+        linear-gradient(145deg, var(--bg1), var(--bg2));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(22px, 4vw, 34px);
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .layout {
+      width: min(1150px, 100%);
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      gap: 16px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      backdrop-filter: blur(5px);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
+    }
+
+    .video-wrap {
+      position: relative;
+      padding: 12px;
+      overflow: hidden;
+    }
+
+    video {
+      display: none;
+    }
+
+    canvas {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #2d647e;
+      background: #071319;
+    }
+
+    .live-pill {
+      position: absolute;
+      top: 22px;
+      left: 22px;
+      border: 1px solid #2d657b;
+      border-radius: 999px;
+      background: rgba(2, 11, 15, 0.74);
+      color: var(--muted);
+      padding: 6px 12px;
+      font-size: 12px;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--warn);
+      box-shadow: 0 0 0 0 rgba(255, 194, 102, 0.5);
+      animation: pulse 1.6s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 194, 102, 0.5); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 194, 102, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 194, 102, 0); }
+    }
+
+    .stats {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .card {
+      border: 1px solid #295a6b;
+      border-radius: 10px;
+      background: rgba(8, 24, 31, 0.66);
+      padding: 10px;
+    }
+
+    .card.wide {
+      grid-column: 1 / -1;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.35px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .value {
+      font-size: 25px;
+      font-weight: 700;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .value.small {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .ok {
+      color: var(--ok);
+    }
+
+    .warn {
+      color: var(--warn);
+    }
+
+    .bad {
+      color: var(--bad);
+    }
+
+    select {
+      width: 100%;
+      border: 1px solid #2e6477;
+      border-radius: 8px;
+      background: #0c2430;
+      color: var(--text);
+      font-size: 14px;
+      padding: 8px;
+      outline: none;
+    }
+
+    #perExercise {
+      margin: 0;
+      padding-left: 18px;
+      color: #cfe6f2;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 920px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Affordable Health Tracking and Fitness Monitoring</h1>
+  <p class="subtitle">Modular real-time engine for squats, push-ups, and jumping jacks with form quality analysis</p>
+
+  <div class="layout">
+    <section class="panel video-wrap">
+      <div class="live-pill"><span id="liveDot" class="dot"></span><span id="liveText">Initializing camera...</span></div>
+      <video class="input_video"></video>
+      <canvas class="output_canvas" width="640" height="480"></canvas>
+    </section>
+
+    <section class="panel stats">
+      <div class="card wide">
+        <div class="label">Current Exercise</div>
+        <select id="exerciseSelect">
+          <option value="squat">Squat</option>
+          <option value="pushup">Push-Up</option>
+          <option value="jumpingJack">Jumping Jack</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <div class="label">Exercise State</div>
+        <div class="value" id="exerciseState">INACTIVE</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Current Exercise Reps</div>
+        <div class="value" id="exerciseReps">0</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Correct Reps / Accuracy</div>
+        <div class="value small" id="accuracyText">0 / 0 (0%)</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Fitness Score (0-100)</div>
+        <div class="value" id="fitnessScore">0</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Total Workout Time</div>
+        <div class="value small" id="totalTime">0.0s</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Active Exercise Time</div>
+        <div class="value small" id="activeTime">0.0s</div>
+      </div>
+
+      <div class="card wide">
+        <div class="label">Form Feedback</div>
+        <div id="feedbackText" class="value small warn">Stand in frame to start tracking.</div>
+      </div>
+
+      <div class="card wide">
+        <div class="label">Live Metrics</div>
+        <div id="metricText" class="value small">Waiting for landmarks...</div>
+      </div>
+
+      <div class="card wide">
+        <div class="label">Reps by Exercise</div>
+        <ul id="perExercise"></ul>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const LANDMARKS = {
+      LEFT_SHOULDER: 11,
+      RIGHT_SHOULDER: 12,
+      LEFT_ELBOW: 13,
+      RIGHT_ELBOW: 14,
+      LEFT_WRIST: 15,
+      RIGHT_WRIST: 16,
+      LEFT_HIP: 23,
+      RIGHT_HIP: 24,
+      LEFT_KNEE: 25,
+      RIGHT_KNEE: 26,
+      LEFT_ANKLE: 27,
+      RIGHT_ANKLE: 28
+    };
+
+    const CONFIG = {
+      minVisibility: 0.55,
+      smoothingAlpha: 0.4,
+      activeMotionThreshold: 0.03,
+      inactivityMs: 2200,
+      durationTargetSec: 180,
+      squat: {
+        downAngle: 95,
+        upAngle: 160,
+        backMinAngle: 148,
+        kneeForwardThreshold: 0.12,
+        depthWarningAngle: 108
+      },
+      pushup: {
+        downAngle: 92,
+        upAngle: 158,
+        bodyLineMinAngle: 155,
+        depthWarningAngle: 108
+      },
+      jumpingJack: {
+        legsOpenRatio: 1.6,
+        legsClosedRatio: 1.2,
+        wristsAboveShoulderOffset: 0.02,
+        wristsBelowShoulderOffset: 0.05
+      }
+    };
+
+    const ui = {
+      video: document.querySelector('.input_video'),
+      canvas: document.querySelector('.output_canvas'),
+      ctx: document.querySelector('.output_canvas').getContext('2d'),
+      exerciseSelect: document.getElementById('exerciseSelect'),
+      exerciseState: document.getElementById('exerciseState'),
+      exerciseReps: document.getElementById('exerciseReps'),
+      accuracyText: document.getElementById('accuracyText'),
+      fitnessScore: document.getElementById('fitnessScore'),
+      totalTime: document.getElementById('totalTime'),
+      activeTime: document.getElementById('activeTime'),
+      feedbackText: document.getElementById('feedbackText'),
+      metricText: document.getElementById('metricText'),
+      perExercise: document.getElementById('perExercise'),
+      liveText: document.getElementById('liveText'),
+      liveDot: document.getElementById('liveDot')
+    };
+
+    const appState = {
+      currentExercise: 'squat',
+      sessionStartMs: null,
+      previousFrameMs: null,
+      lastMovementMs: 0,
+      activeMs: 0,
+      inactiveMs: 0,
+      poseDetected: false,
+      smoothedLandmarks: null,
+      previousLandmarks: null,
+      metricSmoothing: {}
+    };
+
+    function isVisible(point, min = CONFIG.minVisibility) {
+      return !!point && typeof point.visibility === 'number' && point.visibility >= min;
+    }
+
+    function distance2D(a, b) {
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // Robust vector-angle calculation with clamping to reduce floating errors.
+    function calculateAngle(a, b, c) {
+      const v1x = a.x - b.x;
+      const v1y = a.y - b.y;
+      const v2x = c.x - b.x;
+      const v2y = c.y - b.y;
+
+      const mag1 = Math.sqrt(v1x * v1x + v1y * v1y);
+      const mag2 = Math.sqrt(v2x * v2x + v2y * v2y);
+      if (mag1 < 1e-6 || mag2 < 1e-6) {
+        return 180;
+      }
+
+      const dot = v1x * v2x + v1y * v2y;
+      const cosine = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
+      return Math.acos(cosine) * (180 / Math.PI);
+    }
+
+    // EMA smoothing for landmarks helps reduce jitter in angle calculations.
+    function smoothLandmarks(rawLandmarks) {
+      if (!Array.isArray(rawLandmarks)) {
+        return null;
+      }
+
+      if (!appState.smoothedLandmarks) {
+        appState.smoothedLandmarks = rawLandmarks.map((p) => ({ ...p }));
+        return appState.smoothedLandmarks;
+      }
+
+      const alpha = CONFIG.smoothingAlpha;
+      appState.smoothedLandmarks = rawLandmarks.map((point, idx) => {
+        const prev = appState.smoothedLandmarks[idx] || point;
+        return {
+          x: prev.x + alpha * (point.x - prev.x),
+          y: prev.y + alpha * (point.y - prev.y),
+          z: prev.z + alpha * ((point.z || 0) - (prev.z || 0)),
+          visibility: point.visibility
+        };
+      });
+
+      return appState.smoothedLandmarks;
+    }
+
+    // Lightweight metric smoothing for stable text and state transitions.
+    function smoothMetric(key, value) {
+      if (!Number.isFinite(value)) {
+        return value;
+      }
+      const prev = appState.metricSmoothing[key];
+      if (prev === undefined) {
+        appState.metricSmoothing[key] = value;
+        return value;
+      }
+      const next = prev * 0.7 + value * 0.3;
+      appState.metricSmoothing[key] = next;
+      return next;
+    }
+
+    function chooseBestSide(landmarks, jointIndexes) {
+      const leftPoints = jointIndexes.left.map((idx) => landmarks[idx]);
+      const rightPoints = jointIndexes.right.map((idx) => landmarks[idx]);
+
+      const leftVisible = leftPoints.every((p) => isVisible(p));
+      const rightVisible = rightPoints.every((p) => isVisible(p));
+
+      if (!leftVisible && !rightVisible) {
+        return null;
+      }
+      if (leftVisible && !rightVisible) {
+        return { side: 'left', points: leftPoints };
+      }
+      if (!leftVisible && rightVisible) {
+        return { side: 'right', points: rightPoints };
+      }
+
+      const leftScore = leftPoints.reduce((sum, p) => sum + p.visibility, 0);
+      const rightScore = rightPoints.reduce((sum, p) => sum + p.visibility, 0);
+      return leftScore >= rightScore
+        ? { side: 'left', points: leftPoints }
+        : { side: 'right', points: rightPoints };
+    }
+
+    function initializeExerciseState(initialPhase) {
+      return {
+        phase: initialPhase,
+        reps: 0,
+        correctReps: 0,
+        downReached: false,
+        repFormBad: false,
+        feedback: 'Ready',
+        lastMetricsText: 'Waiting for movement...'
+      };
+    }
+
+    const exercises = {
+      squat: {
+        label: 'Squat',
+        state: initializeExerciseState('UP'),
+
+        detect(landmarks) {
+          const selection = chooseBestSide(landmarks, {
+            left: [LANDMARKS.LEFT_SHOULDER, LANDMARKS.LEFT_HIP, LANDMARKS.LEFT_KNEE, LANDMARKS.LEFT_ANKLE],
+            right: [LANDMARKS.RIGHT_SHOULDER, LANDMARKS.RIGHT_HIP, LANDMARKS.RIGHT_KNEE, LANDMARKS.RIGHT_ANKLE]
+          });
+          if (!selection) {
+            return null;
+          }
+
+          const [shoulder, hip, knee, ankle] = selection.points;
+          const kneeAngle = smoothMetric('squat_knee', calculateAngle(hip, knee, ankle));
+          const backAngle = smoothMetric('squat_back', calculateAngle(shoulder, hip, knee));
+          const kneeForward = Math.abs(knee.x - ankle.x) > CONFIG.squat.kneeForwardThreshold;
+
+          return { kneeAngle, backAngle, kneeForward };
+        },
+
+        checkForm(metrics) {
+          const messages = [];
+          let good = true;
+
+          if (metrics.backAngle < CONFIG.squat.backMinAngle) {
+            messages.push('Keep back straight.');
+            good = false;
+          }
+          if (metrics.kneeForward) {
+            messages.push('Do not push knees too far forward.');
+            good = false;
+          }
+          if (this.state.phase === 'DOWN' && metrics.kneeAngle > CONFIG.squat.depthWarningAngle) {
+            messages.push('Go lower for full squat range.');
+            good = false;
+          }
+          if (messages.length === 0) {
+            messages.push('Good squat form.');
+          }
+
+          return { good, message: messages.join(' ') };
+        },
+
+        countRep(metrics) {
+          const prevPhase = this.state.phase;
+          if (metrics.kneeAngle < CONFIG.squat.downAngle) {
+            this.state.phase = 'DOWN';
+            this.state.downReached = true;
+          } else if (metrics.kneeAngle > CONFIG.squat.upAngle) {
+            this.state.phase = 'UP';
+          }
+
+          if (prevPhase === 'DOWN' && this.state.phase === 'UP' && this.state.downReached) {
+            this.state.reps += 1;
+            const isCorrect = !this.state.repFormBad;
+            if (isCorrect) {
+              this.state.correctReps += 1;
+            }
+            this.state.downReached = false;
+            this.state.repFormBad = false;
+          }
+        },
+
+        update(landmarks) {
+          const metrics = this.detect(landmarks);
+          if (!metrics) {
+            this.state.feedback = 'Align full side body in frame for squat detection.';
+            this.state.lastMetricsText = 'Knee angle: -- | Back angle: -- | Knee forward: --';
+            return;
+          }
+
+          this.countRep(metrics);
+          const form = this.checkForm(metrics);
+          if (!form.good) {
+            this.state.repFormBad = true;
+          }
+
+          this.state.feedback = form.message;
+          this.state.lastMetricsText = `Knee angle: ${metrics.kneeAngle.toFixed(1)} deg | Back angle: ${metrics.backAngle.toFixed(1)} deg | Knee forward: ${metrics.kneeForward ? 'Yes' : 'No'}`;
+        }
+      },
+
+      pushup: {
+        label: 'Push-Up',
+        state: initializeExerciseState('UP'),
+
+        detect(landmarks) {
+          const selection = chooseBestSide(landmarks, {
+            left: [LANDMARKS.LEFT_SHOULDER, LANDMARKS.LEFT_ELBOW, LANDMARKS.LEFT_WRIST, LANDMARKS.LEFT_HIP, LANDMARKS.LEFT_ANKLE],
+            right: [LANDMARKS.RIGHT_SHOULDER, LANDMARKS.RIGHT_ELBOW, LANDMARKS.RIGHT_WRIST, LANDMARKS.RIGHT_HIP, LANDMARKS.RIGHT_ANKLE]
+          });
+
+          if (!selection) {
+            return null;
+          }
+
+          const [shoulder, elbow, wrist, hip, ankle] = selection.points;
+          const elbowAngle = smoothMetric('pushup_elbow', calculateAngle(shoulder, elbow, wrist));
+          const bodyLineAngle = smoothMetric('pushup_body', calculateAngle(shoulder, hip, ankle));
+
+          return { elbowAngle, bodyLineAngle };
+        },
+
+        checkForm(metrics) {
+          const messages = [];
+          let good = true;
+
+          if (metrics.bodyLineAngle < CONFIG.pushup.bodyLineMinAngle) {
+            messages.push('Keep body straight from shoulder to ankle.');
+            good = false;
+          }
+          if (this.state.phase === 'DOWN' && metrics.elbowAngle > CONFIG.pushup.depthWarningAngle) {
+            messages.push('Lower chest more for full push-up.');
+            good = false;
+          }
+          if (messages.length === 0) {
+            messages.push('Good push-up form.');
+          }
+
+          return { good, message: messages.join(' ') };
+        },
+
+        countRep(metrics) {
+          const prevPhase = this.state.phase;
+          if (metrics.elbowAngle < CONFIG.pushup.downAngle) {
+            this.state.phase = 'DOWN';
+            this.state.downReached = true;
+          } else if (metrics.elbowAngle > CONFIG.pushup.upAngle) {
+            this.state.phase = 'UP';
+          }
+
+          if (prevPhase === 'DOWN' && this.state.phase === 'UP' && this.state.downReached) {
+            this.state.reps += 1;
+            const isCorrect = !this.state.repFormBad;
+            if (isCorrect) {
+              this.state.correctReps += 1;
+            }
+            this.state.downReached = false;
+            this.state.repFormBad = false;
+          }
+        },
+
+        update(landmarks) {
+          const metrics = this.detect(landmarks);
+          if (!metrics) {
+            this.state.feedback = 'Keep shoulder, elbow, wrist, hip, and ankle visible.';
+            this.state.lastMetricsText = 'Elbow angle: -- | Body line angle: --';
+            return;
+          }
+
+          this.countRep(metrics);
+          const form = this.checkForm(metrics);
+          if (!form.good) {
+            this.state.repFormBad = true;
+          }
+
+          this.state.feedback = form.message;
+          this.state.lastMetricsText = `Elbow angle: ${metrics.elbowAngle.toFixed(1)} deg | Body line angle: ${metrics.bodyLineAngle.toFixed(1)} deg`;
+        }
+      },
+
+      jumpingJack: {
+        label: 'Jumping Jack',
+        state: initializeExerciseState('CLOSED'),
+
+        detect(landmarks) {
+          const required = [
+            LANDMARKS.LEFT_WRIST,
+            LANDMARKS.RIGHT_WRIST,
+            LANDMARKS.LEFT_SHOULDER,
+            LANDMARKS.RIGHT_SHOULDER,
+            LANDMARKS.LEFT_ANKLE,
+            LANDMARKS.RIGHT_ANKLE,
+            LANDMARKS.LEFT_HIP,
+            LANDMARKS.RIGHT_HIP
+          ];
+
+          const points = required.map((idx) => landmarks[idx]);
+          if (!points.every((p) => isVisible(p, 0.5))) {
+            return null;
+          }
+
+          const leftWrist = landmarks[LANDMARKS.LEFT_WRIST];
+          const rightWrist = landmarks[LANDMARKS.RIGHT_WRIST];
+          const leftShoulder = landmarks[LANDMARKS.LEFT_SHOULDER];
+          const rightShoulder = landmarks[LANDMARKS.RIGHT_SHOULDER];
+          const leftAnkle = landmarks[LANDMARKS.LEFT_ANKLE];
+          const rightAnkle = landmarks[LANDMARKS.RIGHT_ANKLE];
+          const leftHip = landmarks[LANDMARKS.LEFT_HIP];
+          const rightHip = landmarks[LANDMARKS.RIGHT_HIP];
+
+          const avgWristY = (leftWrist.y + rightWrist.y) / 2;
+          const avgShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+
+          const ankleDistance = distance2D(leftAnkle, rightAnkle);
+          const hipDistance = distance2D(leftHip, rightHip);
+
+          const armsUp = avgWristY < avgShoulderY - CONFIG.jumpingJack.wristsAboveShoulderOffset;
+          const armsDown = avgWristY > avgShoulderY + CONFIG.jumpingJack.wristsBelowShoulderOffset;
+
+          const openRatio = hipDistance > 0 ? ankleDistance / hipDistance : 1;
+          const legsOpen = openRatio > CONFIG.jumpingJack.legsOpenRatio;
+          const legsClosed = openRatio < CONFIG.jumpingJack.legsClosedRatio;
+
+          return { armsUp, armsDown, legsOpen, legsClosed, openRatio };
+        },
+
+        checkForm(metrics) {
+          const messages = [];
+          let good = true;
+
+          if (this.state.phase === 'OPEN' && (!metrics.armsUp || !metrics.legsOpen)) {
+            messages.push('Reach full star shape with arms up and legs wide.');
+            good = false;
+          }
+          if (metrics.armsUp && !metrics.legsOpen) {
+            messages.push('Open legs wider when lifting arms.');
+            good = false;
+          }
+          if (metrics.legsOpen && !metrics.armsUp) {
+            messages.push('Raise arms higher with leg opening.');
+            good = false;
+          }
+          if (messages.length === 0) {
+            messages.push('Good jumping-jack rhythm.');
+          }
+
+          return { good, message: messages.join(' ') };
+        },
+
+        countRep(metrics) {
+          const prevPhase = this.state.phase;
+
+          if (metrics.armsUp && metrics.legsOpen) {
+            this.state.phase = 'OPEN';
+            this.state.downReached = true;
+          } else if (metrics.armsDown && metrics.legsClosed) {
+            this.state.phase = 'CLOSED';
+          }
+
+          if (prevPhase === 'OPEN' && this.state.phase === 'CLOSED' && this.state.downReached) {
+            this.state.reps += 1;
+            const isCorrect = !this.state.repFormBad;
+            if (isCorrect) {
+              this.state.correctReps += 1;
+            }
+            this.state.downReached = false;
+            this.state.repFormBad = false;
+          }
+        },
+
+        update(landmarks) {
+          const metrics = this.detect(landmarks);
+          if (!metrics) {
+            this.state.feedback = 'Keep full body visible for jumping-jack tracking.';
+            this.state.lastMetricsText = 'Arms up: -- | Legs open ratio: --';
+            return;
+          }
+
+          this.countRep(metrics);
+          const form = this.checkForm(metrics);
+          if (!form.good) {
+            this.state.repFormBad = true;
+          }
+
+          this.state.feedback = form.message;
+          this.state.lastMetricsText = `Arms up: ${metrics.armsUp ? 'Yes' : 'No'} | Legs open ratio: ${metrics.openRatio.toFixed(2)} | Phase: ${this.state.phase}`;
+        }
+      }
+    };
+
+    function getCurrentExerciseModule() {
+      return exercises[appState.currentExercise];
+    }
+
+    function computeMotionScore(landmarks) {
+      if (!appState.previousLandmarks) {
+        appState.previousLandmarks = landmarks.map((p) => ({ x: p.x, y: p.y }));
+        return 0;
+      }
+
+      const important = [
+        LANDMARKS.LEFT_SHOULDER,
+        LANDMARKS.RIGHT_SHOULDER,
+        LANDMARKS.LEFT_HIP,
+        LANDMARKS.RIGHT_HIP,
+        LANDMARKS.LEFT_KNEE,
+        LANDMARKS.RIGHT_KNEE,
+        LANDMARKS.LEFT_ANKLE,
+        LANDMARKS.RIGHT_ANKLE,
+        LANDMARKS.LEFT_WRIST,
+        LANDMARKS.RIGHT_WRIST
+      ];
+
+      let total = 0;
+      for (const idx of important) {
+        const prev = appState.previousLandmarks[idx];
+        const curr = landmarks[idx];
+        if (!prev || !curr) {
+          continue;
+        }
+        total += Math.abs(curr.x - prev.x) + Math.abs(curr.y - prev.y);
+      }
+
+      appState.previousLandmarks = landmarks.map((p) => ({ x: p.x, y: p.y }));
+      return total / important.length;
+    }
+
+    function updateActivityTimers(nowMs, motionScore, hasPose) {
+      if (!appState.sessionStartMs) {
+        appState.sessionStartMs = nowMs;
+      }
+      if (!appState.previousFrameMs) {
+        appState.previousFrameMs = nowMs;
+      }
+
+      const dt = nowMs - appState.previousFrameMs;
+      appState.previousFrameMs = nowMs;
+
+      if (!hasPose) {
+        appState.inactiveMs += dt;
+        return;
+      }
+
+      const currentModule = getCurrentExerciseModule();
+      const activeByPhase = currentModule && (currentModule.state.phase === 'DOWN' || currentModule.state.phase === 'OPEN');
+
+      if (motionScore > CONFIG.activeMotionThreshold || activeByPhase) {
+        appState.lastMovementMs = nowMs;
+      }
+
+      const active = nowMs - appState.lastMovementMs <= CONFIG.inactivityMs;
+      if (active) {
+        appState.activeMs += dt;
+      } else {
+        appState.inactiveMs += dt;
+      }
+    }
+
+    function totalReps() {
+      return Object.values(exercises).reduce((sum, exercise) => sum + exercise.state.reps, 0);
+    }
+
+    function totalCorrectReps() {
+      return Object.values(exercises).reduce((sum, exercise) => sum + exercise.state.correctReps, 0);
+    }
+
+    // HealthTech score balances volume, quality, and active duration.
+    function computeFitnessScore() {
+      const reps = totalReps();
+      const correct = totalCorrectReps();
+
+      const qualityScore = reps > 0 ? (correct / reps) * 100 : 0;
+      const volumeScore = Math.min(100, reps * 5);
+      const durationSec = appState.activeMs / 1000;
+      const durationScore = Math.min(100, (durationSec / CONFIG.durationTargetSec) * 100);
+
+      return Math.round(qualityScore * 0.5 + volumeScore * 0.2 + durationScore * 0.3);
+    }
+
+    function buildRealtimeFeedback() {
+      const module = getCurrentExerciseModule();
+      const reps = module.state.reps;
+      const correct = module.state.correctReps;
+      const accuracy = reps > 0 ? Math.round((correct / reps) * 100) : 0;
+
+      return {
+        currentExercise: module.label,
+        exerciseState: appState.poseDetected ? module.state.phase : 'INACTIVE',
+        repCount: reps,
+        correctReps: correct,
+        accuracy,
+        feedback: module.state.feedback,
+        metricText: module.state.lastMetricsText,
+        fitnessScore: computeFitnessScore()
+      };
+    }
+
+    function renderPerExerciseList() {
+      const rows = Object.values(exercises).map((exercise) => {
+        const reps = exercise.state.reps;
+        const correct = exercise.state.correctReps;
+        const accuracy = reps > 0 ? Math.round((correct / reps) * 100) : 0;
+        return `<li>${exercise.label}: ${reps} reps, ${accuracy}% accuracy</li>`;
+      }).join('');
+
+      ui.perExercise.innerHTML = rows;
+    }
+
+    function renderUi() {
+      const now = Date.now();
+      const output = buildRealtimeFeedback();
+      const totalTimeSec = appState.sessionStartMs ? (now - appState.sessionStartMs) / 1000 : 0;
+
+      ui.exerciseState.textContent = output.exerciseState;
+      ui.exerciseReps.textContent = String(output.repCount);
+      ui.accuracyText.textContent = `${output.correctReps} / ${output.repCount} (${output.accuracy}%)`;
+      ui.fitnessScore.textContent = String(output.fitnessScore);
+      ui.feedbackText.textContent = output.feedback;
+      ui.metricText.textContent = output.metricText;
+      ui.totalTime.textContent = `${totalTimeSec.toFixed(1)}s`;
+      ui.activeTime.textContent = `${(appState.activeMs / 1000).toFixed(1)}s`;
+
+      ui.exerciseState.className = 'value';
+      if (output.exerciseState === 'UP' || output.exerciseState === 'CLOSED') {
+        ui.exerciseState.classList.add('ok');
+      } else if (output.exerciseState === 'DOWN' || output.exerciseState === 'OPEN') {
+        ui.exerciseState.classList.add('warn');
+      } else {
+        ui.exerciseState.classList.add('bad');
+      }
+
+      ui.feedbackText.className = 'value small';
+      if (output.feedback.toLowerCase().includes('good')) {
+        ui.feedbackText.classList.add('ok');
+      } else if (output.feedback.toLowerCase().includes('keep') || output.feedback.toLowerCase().includes('do not')) {
+        ui.feedbackText.classList.add('bad');
+      } else {
+        ui.feedbackText.classList.add('warn');
+      }
+
+      ui.liveText.textContent = appState.poseDetected ? `Live tracking: ${output.currentExercise}` : 'No body detected';
+      ui.liveDot.style.background = appState.poseDetected ? 'var(--ok)' : 'var(--warn)';
+
+      renderPerExerciseList();
+    }
+
+    function drawPose(results) {
+      const { ctx, canvas } = ui;
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+      if (results.poseLandmarks) {
+        drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#5ad8ff', lineWidth: 3 });
+        drawLandmarks(ctx, results.poseLandmarks, { color: '#ffd778', radius: 4, lineWidth: 1 });
+      }
+
+      ctx.restore();
+    }
+
+    function onPoseResults(results) {
+      drawPose(results);
+
+      const now = Date.now();
+      const rawLandmarks = results.poseLandmarks;
+      appState.poseDetected = Array.isArray(rawLandmarks) && rawLandmarks.length > 0;
+
+      if (!appState.poseDetected) {
+        updateActivityTimers(now, 0, false);
+        const module = getCurrentExerciseModule();        module.state.feedback = 'Step into frame to continue tracking.';
+        module.state.lastMetricsText = 'Waiting for landmarks...';
+        renderUi();
+        return;
+      }
+
+      const landmarks = smoothLandmarks(rawLandmarks);
+      const motionScore = computeMotionScore(landmarks);
+
+      const module = getCurrentExerciseModule();
+      module.update(landmarks);
+      updateActivityTimers(now, motionScore, true);
+      renderUi();
+    }
+
+    ui.exerciseSelect.addEventListener('change', (event) => {
+      appState.currentExercise = event.target.value;
+      renderUi();
+    });
+
+    const pose = new Pose({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+    });
+
+    pose.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    pose.onResults(onPoseResults);
+
+    const camera = new Camera(ui.video, {
+      onFrame: async () => {
+        await pose.send({ image: ui.video });
+      },
+      width: 640,
+      height: 480
+    });
+
+    camera.start().then(() => {
+      ui.liveText.textContent = 'Camera started';
+      renderUi();
+    }).catch((error) => {
+      console.error('Camera start failed:', error);
+      ui.liveText.textContent = 'Camera permission required';
+      ui.feedbackText.textContent = 'Allow webcam access and refresh the page.';
+      ui.feedbackText.className = 'value small bad';
+    });
+  </script>
+</body>
+
+</html>
+
