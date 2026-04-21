@@ -19,13 +19,13 @@ const DETECTION_INTERVAL = 800;
 const HISTORY_LIMIT = 20;
 
 const EMOTIONS = [
-  { key: 'happy', label: 'Happy', color: '#22C55E', description: 'Positive and uplifted', icon: Smile, emoji: ':)' },
-  { key: 'sad', label: 'Sad', color: '#3B82F6', description: 'Feeling down', icon: Frown, emoji: ':(' },
-  { key: 'neutral', label: 'Neutral', color: '#6B7280', description: 'Calm and balanced', icon: Meh, emoji: ':|' },
-  { key: 'surprised', label: 'Surprised', color: '#F59E0B', description: 'Unexpected reaction', icon: AlertCircle, emoji: ':O' },
-  { key: 'angry', label: 'Angry', color: '#EF4444', description: 'Frustrated or stressed', icon: AlertCircle, emoji: '>:(' },
-  { key: 'fearful', label: 'Fearful', color: '#8B5CF6', description: 'Anxious or worried', icon: AlertCircle, emoji: 'D:' },
-  { key: 'disgusted', label: 'Disgusted', color: '#10B981', description: 'Uncomfortable reaction', icon: AlertCircle, emoji: ':P' }
+  { key: 'happy', label: 'Happy', color: '#22C55E', description: 'Positive and uplifted', icon: Smile, emoji: '😊' },
+  { key: 'sad', label: 'Sad', color: '#3B82F6', description: 'Feeling down', icon: Frown, emoji: '😢' },
+  { key: 'neutral', label: 'Neutral', color: '#6B7280', description: 'Calm and balanced', icon: Meh, emoji: '😐' },
+  { key: 'surprised', label: 'Surprised', color: '#F59E0B', description: 'Unexpected reaction', icon: AlertCircle, emoji: '😲' },
+  { key: 'angry', label: 'Angry', color: '#EF4444', description: 'Frustrated or stressed', icon: AlertCircle, emoji: '😠' },
+  { key: 'fearful', label: 'Fearful', color: '#8B5CF6', description: 'Anxious or worried', icon: AlertCircle, emoji: '😨' },
+  { key: 'disgusted', label: 'Disgusted', color: '#10B981', description: 'Uncomfortable reaction', icon: AlertCircle, emoji: '🤢' }
 ];
 
 function loadFaceApiScript() {
@@ -439,10 +439,6 @@ const EmotionDetection = () => {
               <button className="btn btn-secondary" onClick={clearHistory}>
                 <Trash2 size={18} />
                 Clear Log
-              </button>
-              <button className="btn btn-primary" onClick={exportSession}>
-                <Download size={18} />
-                Export JSON
               </button>
             </div>
 
