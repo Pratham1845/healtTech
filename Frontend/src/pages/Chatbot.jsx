@@ -39,14 +39,19 @@ const Chatbot = () => {
           totalActiveMinutes: summary?.totalActiveMinutes ?? 0
         });
       } catch (error) {
-        setHealthData({
-          healthScore: 70,
-          postureScore: 70,
-          sleepScore: null,
-          activityLevel: 'Moderate',
-          mood: 'Neutral',
-          totalActiveMinutes: 0
-        });
+        console.error('Failed to load activity summary:', error);
+        
+        // Don't set default data if it's an auth error (will redirect to login)
+        if (!error.isAuthError) {
+          setHealthData({
+            healthScore: 70,
+            postureScore: 70,
+            sleepScore: null,
+            activityLevel: 'Moderate',
+            mood: 'Neutral',
+            totalActiveMinutes: 0
+          });
+        }
       }
     };
 
@@ -115,7 +120,12 @@ const Chatbot = () => {
         }));
       }
     } catch (error) {
-      appendMessage('bot', FALLBACK_MESSAGE);
+      console.error('Chat send error:', error);
+      
+      // Don't show fallback message if it's an auth error (will redirect)
+      if (!error.isAuthError) {
+        appendMessage('bot', FALLBACK_MESSAGE);
+      }
     } finally {
       setLoading(false);
     }

@@ -34,6 +34,8 @@ export const apiFetch = async (path, options = {}) => {
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.warn('No authentication token found. User may not be logged in.');
   }
 
   try {
@@ -43,6 +45,27 @@ export const apiFetch = async (path, options = {}) => {
     });
 
     const payload = await response.json().catch(() => ({}));
+
+    // Handle 401 Unauthorized specifically
+    if (response.status === 401) {
+      console.error('Authentication failed: Token is invalid or expired');
+      console.error('Request path:', path);
+      console.error('Token exists:', !!token);
+      
+      // Clear invalid token
+      clearAuthUser();
+      
+      // Redirect to login page
+      if (window.location.pathname !== '/login') {
+        console.log('Redirecting to login page...');
+        window.location.href = '/login';
+      }
+      
+      const error = new Error('Session expired. Please login again.');
+      error.status = 401;
+      error.isAuthError = true;
+      throw error;
+    }
 
     if (!response.ok) {
       const message = payload?.message || payload?.error || 'Request failed';

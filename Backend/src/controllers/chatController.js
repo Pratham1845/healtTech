@@ -2,6 +2,7 @@
 const ChatMessage = require('../models/ChatMessage');
 const ActivitySession = require('../models/ActivitySession');
 const User = require('../models/User');
+const Groq = require('groq-sdk');
 
 const FALLBACK_MESSAGE = 'Unable to fetch response. Try basic exercises like stretching and posture correction';
 
@@ -119,8 +120,62 @@ const buildPrompt = (userInput, contextData) => {
   ].join('\n');
 };
 
+const askGroq = async (userInput, contextData) => {
+  console.log('Groq API Key loaded:', process.env.GROQ_API_KEY ? 'YES' : 'NO');
+  console.log('Groq API Key value:', process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.substring(0, 10) + '...' : 'MISSING');
+  
+  if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === 'YOUR_GROQ_API_KEY_HERE') {
+    console.log('Groq API key is missing or placeholder');
+    return {
+      text: FALLBACK_MESSAGE,
+      status: 'fallback',
+      error: 'GROQ_API_KEY is missing in backend environment'
+    };
+  }
+
+  try {
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    
+    console.log('GROQ_MODEL env variable:', process.env.GROQ_MODEL);
+    
+    const prompt = buildPrompt(userInput, contextData);
+    
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: `You are a friendly fitness coach. Suggest workouts, injury prevention tips, and progression advice. Keep responses short and actionable. Respond in the same language as the user (Hindi or English).`
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+      temperature: 0.5,
+      max_tokens: 220,
+    });
+
+    const text = completion.choices[0]?.message?.content?.trim() || '';
+    const shortReply = text.split('\n').slice(0, 5).join('\n').trim();
+
+    return {
+      text: shortReply || FALLBACK_MESSAGE,
+      status: 'success',
+      error: null
+    };
+  } catch (error) {
+    console.error('Groq API error:', error.message);
+    return {
+      text: FALLBACK_MESSAGE,
+      status: 'fallback',
+      error: `Groq API error: ${error.message}`
+    };
+  }
+};
+
 const callGemini = async (userInput, contextData) => {
-  if (!process.env.GEMINI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'YOUR_NEW_API_KEY_HERE') {
     return {
       text: FALLBACK_MESSAGE,
       status: 'fallback',
@@ -135,48 +190,60 @@ const callGemini = async (userInput, contextData) => {
 
   const prompt = buildPrompt(userInput, contextData);
   let bestErrorCode = null;
+  let lastErrorMessage = '';
 
   for (const modelName of modelCandidates) {
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: prompt }]
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.5,
+            maxOutputTokens: 220
           }
-        ],
-        generationConfig: {
-          temperature: 0.5,
-          maxOutputTokens: 220
-        }
-      })
-    });
+        })
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
-      const shortReply = text.split('\n').slice(0, 5).join('\n').trim();
+      if (response.ok) {
+        const data = await response.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+        const shortReply = text.split('\n').slice(0, 5).join('\n').trim();
 
-      return {
-        text: shortReply || FALLBACK_MESSAGE,
-        status: 'success',
-        error: null
-      };
-    }
+        return {
+          text: shortReply || FALLBACK_MESSAGE,
+          status: 'success',
+          error: null
+        };
+      }
 
-    bestErrorCode = response.status;
+      // Get error details
+      bestErrorCode = response.status;
+      const errorData = await response.json().catch(() => ({}));
+      lastErrorMessage = errorData?.error?.message || `HTTP ${response.status}`;
+      
+      console.error(`Gemini API error (${modelName}):`, response.status, lastErrorMessage);
 
-    if (response.status === 404 || response.status === 429) {
+      if (response.status === 404 || response.status === 429) {
+        continue;
+      }
+
+      break;
+    } catch (error) {
+      console.error(`Gemini fetch error (${modelName}):`, error.message);
+      lastErrorMessage = error.message;
       continue;
     }
-
-    break;
   }
 
   const errorMessage =
@@ -184,8 +251,10 @@ const callGemini = async (userInput, contextData) => {
       ? 'Gemini API key is invalid or restricted'
       : bestErrorCode === 429
       ? 'Gemini quota exceeded, retry later'
-      : FALLBACK_MESSAGE;
+      : `Gemini API error: ${lastErrorMessage}`;
 
+  console.error('All Gemini API attempts failed. Returning fallback message.');
+  
   return {
     text: FALLBACK_MESSAGE,
     status: 'fallback',
@@ -209,7 +278,14 @@ const generateChatReply = asyncHandler(async (req, res) => {
     healthScore: calculatedHealthScore
   });
 
-  const result = await callGemini(userInput, { ...contextData, healthScore: calculatedHealthScore });
+  // Try Groq first (faster and free), fallback to Gemini
+  let result = await askGroq(userInput, { ...contextData, healthScore: calculatedHealthScore });
+  
+  // If Groq fails, try Gemini
+  if (result.status === 'fallback') {
+    console.log('Groq failed, trying Gemini...');
+    result = await callGemini(userInput, { ...contextData, healthScore: calculatedHealthScore });
+  }
 
   const savedMessage = await ChatMessage.create({
     user: req.user._id,

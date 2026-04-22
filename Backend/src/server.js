@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
+const path = require('path');
 
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
@@ -10,7 +11,11 @@ const healthRoutes = require('./routes/healthRoutes');
 const activityRoutes = require('./routes/activityRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
-dotenv.config();
+// Load environment variables with explicit path
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+console.log('Environment loaded. GROQ_API_KEY:', process.env.GROQ_API_KEY ? 'LOADED' : 'MISSING');
+console.log('Environment loaded. GROQ_API_KEY starts with:', process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.substring(0, 10) : 'N/A');
+
 connectDB();
 
 const app = express();
