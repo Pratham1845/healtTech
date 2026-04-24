@@ -120,9 +120,6 @@ const EmotionDetection = () => {
   }, [clearTimerInterval, updateSessionTime]);
 
   const loadModels = useCallback(async () => {
-    const dominantKey = currentEmotionKey || 'neutral';
-    const dominantLabel = (EMOTIONS.find((emotion) => emotion.key === dominantKey) || EMOTIONS[2]).label;
-
     try {
       setStatusText('Loading AI models...');
       setError('');
@@ -154,9 +151,6 @@ const EmotionDetection = () => {
     }
 
     isProcessingRef.current = true;
-
-    const dominantKey = currentEmotionKey || 'neutral';
-    const dominantLabel = (EMOTIONS.find((emotion) => emotion.key === dominantKey) || EMOTIONS[2]).label;
 
     try {
       const detections = await faceapi
@@ -291,9 +285,6 @@ const EmotionDetection = () => {
       setError('Models are still loading. Please wait a moment.');
       return;
     }
-
-    const dominantKey = currentEmotionKey || 'neutral';
-    const dominantLabel = (EMOTIONS.find((emotion) => emotion.key === dominantKey) || EMOTIONS[2]).label;
 
     try {
       setError('');
@@ -565,6 +556,7 @@ const EmotionDetection = () => {
 };
 
 export default EmotionDetection;
+
 
 
 

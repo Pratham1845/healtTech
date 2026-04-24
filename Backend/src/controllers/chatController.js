@@ -104,7 +104,7 @@ const buildPrompt = (userInput, contextData) => {
     'You are a fitness and health AI coach for HealthTech app users.',
     'Use the provided user metrics to personalize the advice.',
     'Give short practical advice in 3-5 lines only.',
-    'Respond in the same language as user (Hindi or English).',
+    'Respond in the same language as user (in user\'s language).',
     '',
     'User Health Data:',
     `- Health Score: ${contextData.healthScore ?? 'Unknown'}`,
@@ -144,7 +144,7 @@ const askGroq = async (userInput, contextData) => {
       messages: [
         {
           role: 'system',
-          content: `You are a friendly fitness coach. Suggest workouts, injury prevention tips, and progression advice. Keep responses short and actionable. Respond in the same language as the user (Hindi or English).`
+          content: `You are a friendly fitness coach. Suggest workouts, injury prevention tips, and progression advice. Keep responses short and actionable. Respond in the same language as the user (in user's language).`
         },
         {
           role: 'user',
