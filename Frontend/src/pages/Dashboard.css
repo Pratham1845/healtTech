@@ -72,13 +72,40 @@
 }
 
 /* Simple Bar Chart - Normal Format */
+.bar-chart-container {
+  position: relative;
+  height: 220px;
+  padding: 1.5rem 0 0 0;
+}
+
+.bar-chart-grid {
+  position: absolute;
+  top: 1.5rem;
+  left: 0;
+  width: 100%;
+  height: 160px; /* matches bar-wrapper-simple height */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.grid-line {
+  width: 100%;
+  height: 1px;
+  background: var(--panel-border);
+  opacity: 0.5;
+}
+
 .bar-chart-simple {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 0.75rem;
-  height: 220px;
-  padding: 1.5rem 0;
+  height: 100%;
 }
 
 .bar-item-simple {
@@ -88,13 +115,7 @@
   align-items: center;
   gap: 0.5rem;
   height: 100%;
-}
-
-.bar-value-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--accent-cyan);
-  min-height: 1rem;
+  position: relative;
 }
 
 .bar-wrapper-simple {
@@ -108,16 +129,42 @@
 .bar-fill-simple {
   width: 100%;
   max-width: 45px;
-  background: var(--primary-gradient);
+  background: linear-gradient(180deg, var(--accent-cyan) 0%, rgba(0, 231, 255, 0.2) 100%);
   border-radius: 6px 6px 0 0;
-  transition: all var(--transition-normal);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   position: relative;
   min-height: 4px;
 }
 
 .bar-fill-simple:hover {
   transform: scaleY(1.05);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 15px rgba(0, 231, 255, 0.4);
+  background: linear-gradient(180deg, #fff 0%, var(--accent-cyan) 100%);
+}
+
+.bar-tooltip {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  border: 1px solid var(--panel-border);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, top 0.2s ease;
+  z-index: 10;
+}
+
+.bar-fill-simple:hover .bar-tooltip {
+  opacity: 1;
+  top: -40px;
 }
 
 .bar-label-simple {
@@ -149,6 +196,7 @@
   align-items: center;
   position: relative;
   flex: 1;
+  height: 100%;
 }
 
 .mood-circle {
@@ -159,34 +207,65 @@
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: 700;
-  font-size: 0.85rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all var(--transition-fast);
-  position: relative;
+  position: absolute;
+  margin-bottom: -20px; /* Offset to center the circle exactly on the Y percentage */
   z-index: 3;
 }
 
 .mood-circle:hover {
   transform: scale(1.15);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+.mood-emoji {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.mood-tooltip {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  border: 1px solid var(--panel-border);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, top 0.2s ease;
+}
+
+.mood-circle:hover .mood-tooltip {
+  opacity: 1;
+  top: -40px;
 }
 
 .mood-day-label {
   font-size: 0.75rem;
   color: var(--text-muted);
   font-weight: 600;
-  margin-top: 0.5rem;
+  position: absolute;
+  bottom: -20px;
 }
 
 .mood-line-svg {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 100%;
+  left: 0.5rem; /* Matches container padding */
+  width: calc(100% - 1rem);
   height: 100%;
   z-index: 1;
   pointer-events: none;
+  overflow: visible;
 }
 
 .mood-breakdown {

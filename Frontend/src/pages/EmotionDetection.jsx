@@ -1,8 +1,7 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   Camera,
-  Download,
   Frown,
   Meh,
   PauseCircle,
@@ -20,13 +19,13 @@ const DETECTION_INTERVAL = 800;
 const HISTORY_LIMIT = 20;
 
 const EMOTIONS = [
-  { key: 'happy', label: 'Happy', color: '#22C55E', description: 'Positive and uplifted', icon: Smile, emoji: ':)' },
-  { key: 'sad', label: 'Sad', color: '#3B82F6', description: 'Feeling down', icon: Frown, emoji: ':(' },
-  { key: 'neutral', label: 'Neutral', color: '#6B7280', description: 'Calm and balanced', icon: Meh, emoji: ':|' },
-  { key: 'surprised', label: 'Surprised', color: '#F59E0B', description: 'Unexpected reaction', icon: AlertCircle, emoji: ':O' },
-  { key: 'angry', label: 'Angry', color: '#EF4444', description: 'Frustrated or stressed', icon: AlertCircle, emoji: '>:-(' },
-  { key: 'fearful', label: 'Fearful', color: '#8B5CF6', description: 'Anxious or worried', icon: AlertCircle, emoji: ':S' },
-  { key: 'disgusted', label: 'Disgusted', color: '#10B981', description: 'Uncomfortable reaction', icon: AlertCircle, emoji: ':/' }
+  { key: 'happy',     label: 'Happy',     color: '#22C55E', description: 'Positive and uplifted',      icon: Smile,       emoji: '😊' },
+  { key: 'sad',       label: 'Sad',       color: '#3B82F6', description: 'Feeling down',                icon: Frown,       emoji: '😢' },
+  { key: 'neutral',   label: 'Neutral',   color: '#6B7280', description: 'Calm and balanced',           icon: Meh,         emoji: '😐' },
+  { key: 'surprised', label: 'Surprised', color: '#F59E0B', description: 'Unexpected reaction',         icon: AlertCircle, emoji: '😲' },
+  { key: 'angry',     label: 'Angry',     color: '#EF4444', description: 'Frustrated or stressed',      icon: AlertCircle, emoji: '😠' },
+  { key: 'fearful',   label: 'Fearful',   color: '#8B5CF6', description: 'Anxious or worried',          icon: AlertCircle, emoji: '😨' },
+  { key: 'disgusted', label: 'Disgusted', color: '#10B981', description: 'Uncomfortable reaction',      icon: AlertCircle, emoji: '🤢' }
 ];
 
 function loadFaceApiScript() {
@@ -235,7 +234,6 @@ const EmotionDetection = () => {
     pausedMsRef.current = 0;
   }, []);
 
-
   const saveEmotionSession = useCallback(async () => {
     if (hasSavedRef.current || sessionSeconds <= 0 || emotionHistory.length === 0) {
       return;
@@ -306,7 +304,6 @@ const EmotionDetection = () => {
       pauseStartRef.current = 0;
       pausedMsRef.current = 0;
       hasSavedRef.current = false;
-      
 
       startTimer();
       startDetectionLoop();
@@ -373,10 +370,7 @@ const EmotionDetection = () => {
       ['neutral', 0]
     );
 
-    return {
-      emotionKey,
-      count
-    };
+    return { emotionKey, count };
   }, [emotionCounts]);
 
   const currentEmotion = useMemo(() => {
@@ -409,9 +403,9 @@ const EmotionDetection = () => {
         <div className="page-header">
           <div>
             <h1>
-              Emotion <span className="text-gradient">Detection</span>
+              😊 Emotion <span className="text-gradient">Detection</span>
             </h1>
-            <p>Integrated face-api model from your EmotionDetection folder with live camera controls.</p>
+            <p>Real-time facial emotion analysis powered by face-api.js — see your mood reflected live.</p>
           </div>
         </div>
 
@@ -423,6 +417,7 @@ const EmotionDetection = () => {
         )}
 
         <div className="emotion-layout">
+          {/* ── Main Panel ── */}
           <div className="emotion-main glass-card">
             <div className="camera-container">
               <video ref={videoRef} autoPlay playsInline muted className={`camera-feed ${isCameraOn ? 'active' : ''}`} />
@@ -437,20 +432,27 @@ const EmotionDetection = () => {
 
               {isCameraOn && (
                 <div className="emotion-overlay">
+                  {/* Badge pill */}
                   <div className="emotion-badge" style={{ backgroundColor: currentEmotion.color }}>
-                    <span>{currentEmotion.emoji}</span>
-                    <span>{currentEmotion.label}</span>
+                    <span className="badge-emoji">{currentEmotion.emoji}</span>
+                    <span className="badge-label">{currentEmotion.label}</span>
                     <span className="confidence">{confidence}%</span>
+                  </div>
+                  {/* Large floating emoji that pops in on every new emotion */}
+                  <div className="emotion-emoji-float" key={currentEmotionKey}>
+                    {currentEmotion.emoji}
                   </div>
                 </div>
               )}
             </div>
 
+            {/* Status bar */}
             <div className="status-row">
               <span className={`status-dot ${isCameraOn && !isPaused ? 'live' : ''}`}></span>
               <span>{statusText}</span>
             </div>
 
+            {/* Main controls */}
             <div className="detection-controls multi-controls">
               {!isCameraOn ? (
                 <button className="btn btn-primary btn-lg" onClick={startCamera} disabled={!isModelReady}>
@@ -480,6 +482,7 @@ const EmotionDetection = () => {
               </button>
             </div>
 
+            {/* Secondary controls */}
             <div className="detection-controls multi-controls compact">
               <button className="btn btn-secondary" onClick={clearHistory}>
                 <Trash2 size={18} />
@@ -487,11 +490,18 @@ const EmotionDetection = () => {
               </button>
             </div>
 
+            {/* Current emotion card */}
             <div className="current-emotion-display">
               <h3>Current Emotion</h3>
               <div className="emotion-display-card" style={{ borderColor: currentEmotion.color }}>
-                <div className="emotion-icon-large" style={{ color: currentEmotion.color }}>
-                  <span className="emoji-large">{currentEmotion.emoji}</span>
+                <div className="emotion-icon-large">
+                  <span
+                    className="emoji-large emoji-bounce"
+                    key={currentEmotionKey}
+                    style={{ filter: `drop-shadow(0 0 20px ${currentEmotion.color}bb)` }}
+                  >
+                    {currentEmotion.emoji}
+                  </span>
                 </div>
                 <h2 style={{ color: currentEmotion.color }}>{currentEmotion.label}</h2>
                 <p>{currentEmotion.description}</p>
@@ -506,7 +516,9 @@ const EmotionDetection = () => {
             </div>
           </div>
 
+          {/* ── Sidebar ── */}
           <div className="emotion-sidebar">
+            {/* Detection history */}
             <div className="emotion-history glass-card">
               <h3>Detection History</h3>
               <div className="history-list">
@@ -515,15 +527,22 @@ const EmotionDetection = () => {
                 ) : (
                   emotionHistory.map((item, idx) => {
                     const emotion = EMOTIONS.find((entry) => entry.key === item.emotion) || EMOTIONS[2];
-                    const IconComponent = emotion.icon;
 
                     return (
                       <div key={`${item.timestamp}-${idx}`} className="history-item">
-                        <div className="history-icon" style={{ color: emotion.color }}>
-                          <IconComponent size={20} />
+                        <div
+                          className="history-icon"
+                          style={{
+                            background: `${emotion.color}22`,
+                            border: `1.5px solid ${emotion.color}55`
+                          }}
+                        >
+                          <span className="history-emoji">{emotion.emoji}</span>
                         </div>
                         <div className="history-details">
-                          <span className="history-emotion">{emotion.label}</span>
+                          <span className="history-emotion" style={{ color: emotion.color }}>
+                            {emotion.label}
+                          </span>
                           <span className="history-confidence">{item.confidence}% confidence</span>
                           <span className="history-time">{item.timestamp}</span>
                         </div>
@@ -534,18 +553,38 @@ const EmotionDetection = () => {
               </div>
             </div>
 
+            {/* Session stats */}
             <div className="emotion-info glass-card">
               <h3>Session Stats</h3>
               <ul className="info-list">
-                <li>Total detections: {emotionHistory.length}</li>
                 <li>
-                  Dominant emotion:{' '}
-                  {(EMOTIONS.find((emotion) => emotion.key === dominantEmotion.emotionKey) || EMOTIONS[2]).label}
-                  {' '}({dominantEmotion.count})
+                  <span className="stat-emoji">🎯</span>
+                  <span>Total detections: <strong>{emotionHistory.length}</strong></span>
                 </li>
-                <li>Session time: {sessionSeconds}s</li>
-                <li>Saved health score: {savedHealthScore ?? '--'}</li>
-                <li>Model status: {isModelReady ? 'Loaded' : 'Loading'}</li>
+                <li>
+                  <span className="stat-emoji">
+                    {(EMOTIONS.find((e) => e.key === dominantEmotion.emotionKey) || EMOTIONS[2]).emoji}
+                  </span>
+                  <span>
+                    Dominant:{' '}
+                    <strong>
+                      {(EMOTIONS.find((e) => e.key === dominantEmotion.emotionKey) || EMOTIONS[2]).label}
+                    </strong>{' '}
+                    ({dominantEmotion.count})
+                  </span>
+                </li>
+                <li>
+                  <span className="stat-emoji">⏱️</span>
+                  <span>Session time: <strong>{sessionSeconds}s</strong></span>
+                </li>
+                <li>
+                  <span className="stat-emoji">💚</span>
+                  <span>Health score: <strong>{savedHealthScore ?? '--'}</strong></span>
+                </li>
+                <li>
+                  <span className="stat-emoji">{isModelReady ? '✅' : '⏳'}</span>
+                  <span>Model: <strong>{isModelReady ? 'Ready' : 'Loading…'}</strong></span>
+                </li>
               </ul>
             </div>
           </div>
@@ -556,7 +595,3 @@ const EmotionDetection = () => {
 };
 
 export default EmotionDetection;
-
-
-
-

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, TrendingUp, Activity, Target, Moon, Plus, Save } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import './ActivityStats.css';
@@ -119,16 +119,31 @@ const ActivityStats = () => {
               <h3>Sessions Trend</h3>
               <span className="chart-value">{summary?.totalSessions ?? 0} total</span>
             </div>
-            <div className="bar-chart">
-              {chartData.map((item, idx) => (
-                <div key={idx} className="bar-item">
-                  <div className="bar-wrapper">
-                    <div className="bar-fill" style={{ height: `${item.height}%` }}>
-                      <span className="bar-value">{item.value}</span>
+            
+            <div className="activity-chart-wrapper">
+              <div className="activity-chart-grid">
+                <div className="grid-line"></div>
+                <div className="grid-line"></div>
+                <div className="grid-line"></div>
+                <div className="grid-line"></div>
+              </div>
+              <div className="activity-bar-chart">
+                {chartData.map((item, idx) => (
+                  <div key={idx} className="activity-bar-item">
+                    <div className="activity-bar-wrapper">
+                      <div className="activity-bar-fill" style={{ height: `${item.height}%` }}>
+                        <div className="activity-bar-tooltip">
+                          {item.value > 0 ? `${item.value} session${item.value > 1 ? 's' : ''}` : 'No activity'}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div className="activity-chart-axis">
+                <span>{timeFilter} Days Ago</span>
+                <span>Today</span>
+              </div>
             </div>
           </div>
         </div>

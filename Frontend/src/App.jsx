@@ -5,7 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages
 import Landing from './pages/Landing';
-import Login from './pages/LoginSimple';
+import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Chatbot from './pages/Chatbot';

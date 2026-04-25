@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { TrendingUp, Activity, PieChart, AlertCircle, MessageCircle, History, Zap, Heart, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StatCard from '../components/StatCard';
@@ -83,21 +83,32 @@ const Dashboard = () => {
               <h3>Weekly Activity</h3>
               <span className="chart-subtitle">Total Sessions: {summary?.totalSessions ?? 0}</span>
             </div>
-            <div className="bar-chart-simple">
-              {weekWorkouts.map((minutes, idx) => {
-                const max = Math.max(...weekWorkouts, 1);
-                const heightPercent = (minutes / max) * 100;
-                const day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][idx] || `D${idx + 1}`;
-                return (
-                  <div key={idx} className="bar-item-simple">
-                    <div className="bar-value-label">{minutes > 0 ? `${minutes}` : ''}</div>
-                    <div className="bar-wrapper-simple">
-                      <div className="bar-fill-simple" style={{ height: `${heightPercent}%` }}></div>
+            <div className="bar-chart-container">
+              <div className="bar-chart-grid">
+                <div className="grid-line"></div>
+                <div className="grid-line"></div>
+                <div className="grid-line"></div>
+                <div className="grid-line"></div>
+              </div>
+              <div className="bar-chart-simple">
+                {weekWorkouts.map((workouts, idx) => {
+                  const max = Math.max(...weekWorkouts, 3);
+                  const heightPercent = (workouts / max) * 100;
+                  const day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][idx] || `D${idx + 1}`;
+                  return (
+                    <div key={idx} className="bar-item-simple">
+                      <div className="bar-wrapper-simple">
+                        <div className="bar-fill-simple" style={{ height: `${heightPercent}%` }}>
+                          <div className="bar-tooltip">
+                            {workouts > 0 ? `${workouts} session${workouts !== 1 ? 's' : ''}` : 'No activity'}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="bar-label-simple">{day}</span>
                     </div>
-                    <span className="bar-label-simple">{day}</span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -107,15 +118,53 @@ const Dashboard = () => {
               <span className="chart-subtitle">Live history</span>
             </div>
             <div className="mood-linear-chart">
+              <svg className="mood-line-svg" preserveAspectRatio="none" viewBox="0 0 100 100">
+                <defs>
+                  <linearGradient id="moodGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="var(--accent-purple)" />
+                    <stop offset="50%" stopColor="var(--accent-blue)" />
+                    <stop offset="100%" stopColor="var(--accent-cyan)" />
+                  </linearGradient>
+                </defs>
+                <path 
+                  d={`M ${moodTrend.map((v, i) => `${(i / Math.max(1, moodTrend.length - 1)) * 100},${100 - Math.max(8, Math.min(95, v))}`).join(' L ')}`}
+                  fill="none" 
+                  stroke="url(#moodGradient)" 
+                  strokeWidth="3" 
+                  vectorEffect="non-scaling-stroke"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
               <div className="mood-data-points">
-                {moodTrend.map((value, idx) => (
-                  <div key={idx} className="mood-point">
-                    <div className="mood-circle" style={{ bottom: `${Math.max(8, Math.min(95, value))}%` }}>
-                      <span>{value}</span>
+                {moodTrend.map((value, idx) => {
+                  const yPos = Math.max(8, Math.min(95, value));
+                  let emoji = '😐';
+                  let color = '#94a3b8';
+                  
+                  if (value >= 85) { emoji = '😊'; color = '#22c55e'; }
+                  else if (value >= 70) { emoji = '😐'; color = '#3b82f6'; }
+                  else if (value >= 55) { emoji = '😢'; color = '#f59e0b'; }
+                  else if (value > 0) { emoji = '😠'; color = '#ef4444'; }
+                  else { emoji = '➖'; color = '#475569'; }
+
+                  return (
+                    <div key={idx} className="mood-point">
+                      <div 
+                        className="mood-circle" 
+                        style={{ 
+                          bottom: `${yPos}%`,
+                          backgroundColor: color,
+                          boxShadow: `0 4px 12px ${color}66`
+                        }}
+                      >
+                        <span className="mood-emoji">{emoji}</span>
+                        <div className="mood-tooltip">Score: {value > 0 ? value : 'N/A'}</div>
+                      </div>
+                      <span className="mood-day-label">D{idx + 1}</span>
                     </div>
-                    <span className="mood-day-label">D{idx + 1}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
